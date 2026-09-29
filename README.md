@@ -107,6 +107,20 @@ dotnet publish src/CadSpace.App -c Release -f net10.0-browserwasm \
 
 3D requires a compatible accelerated OpenGL/GLES/WebGL context. Linux requires Uno/Skia's native dependencies and a display. Release browser builds enable IL/XAML trimming and the jiterpreter; `-p:CadSpaceUntrimmed=true` retains the diagnostic untrimmed build.
 
+## Download
+
+Every [release](https://github.com/wieslawsoltes/CadSpace/releases/latest) ships a self-contained, single-file desktop app — no .NET install needed:
+
+| OS | x64 | Arm64 |
+| --- | --- | --- |
+| Windows | `CadSpace-<version>-win-x64.zip` | `CadSpace-<version>-win-arm64.zip` |
+| macOS | `CadSpace-<version>-osx-x64.tar.gz` | `CadSpace-<version>-osx-arm64.tar.gz` |
+| Linux | `CadSpace-<version>-linux-x64.tar.gz` | `CadSpace-<version>-linux-arm64.tar.gz` |
+
+Extract and run `CadSpace` (`CadSpace.exe` on Windows). Builds are not code-signed yet: on macOS clear the quarantine flag with `xattr -d com.apple.quarantine CadSpace`; on Windows choose **More info → Run anyway** in SmartScreen. Verify downloads against `SHA256SUMS.txt`.
+
+The libraries below are published to [NuGet.org](https://www.nuget.org/packages?q=CadSpace), e.g. `dotnet add package CadSpace.Controls`.
+
 ## Reusable libraries
 
 | Package | Responsibility |
@@ -146,7 +160,7 @@ dotnet run --project tests/CadSpace.Advanced.Tests -c Release
 dotnet run --project tests/CadSpace.Performance.Tests -c Release
 ```
 
-The five suites contain **334 headless regressions**. CI independently audits tested ASCII/binary geometry, styles and widths with zero errors/repairs required; builds Windows/macOS/Linux; packages all libraries; publishes trimmed WebAssembly; and runs real rendered-browser interaction checks. Screenshots, console logs and native checkpoints are retained as artifacts. Current-main builds deploy to GitHub Pages and verify the served commit. Tags run release tests and package desktop/browser/source distributions with checksums. NuGet.org publication, signing and notarization are not automatic.
+The five suites contain **334 headless regressions**. CI independently audits tested ASCII/binary geometry, styles and widths with zero errors/repairs required; builds Windows/macOS/Linux; packages all libraries; publishes trimmed WebAssembly; and runs real rendered-browser interaction checks. Screenshots, console logs and native checkpoints are retained as artifacts. Current-main builds deploy to GitHub Pages and verify the served commit. Release runs for `v*` tags or a supplied manual version: it repeats the release tests, publishes self-contained single-file desktop executables for Windows, macOS and Linux (x64 and arm64), packs all six libraries with symbols, archives browser/source distributions and emits `SHA256SUMS.txt`. Tags attach the assets to a GitHub Release and publish the packages to NuGet.org with [Trusted Publishing](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing) (OIDC, no stored API key) from the protected `nuget` environment; manual runs are dry runs that only upload workflow artifacts. Signing and notarization are not automatic.
 
 Software-backed Chromium is not physical-GPU, accessibility or Autodesk interoperability qualification. Uno's host still uses framebuffer readback through a pinned RGBA adapter, **not zero-copy WebGPU/Vulkan**. Analytic solids, full typography/dynamic blocks/constraints, paper-space viewports/plotting and complete UI/API parity remain substantial work. Read the [coverage matrix](docs/FEATURES.md).
 

@@ -1,4 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup>
+  <PropertyGroup><TargetFramework>net10.0</TargetFramework><Description>DXF reading and writing (ASCII and binary), native CadSpace projects and a checksummed recovery journal.</Description></PropertyGroup>
   <ItemGroup><ProjectReference Include="../CadSpace.Model/CadSpace.Model.csproj" /></ItemGroup>
 </Project>

@@ -3,6 +3,7 @@
     <TargetFrameworks>net10.0-desktop;net10.0-browserwasm</TargetFrameworks>
     <TargetFrameworks Condition="'$(CadSpaceDesktopOnly)' == 'true'">net10.0-desktop</TargetFrameworks>
     <IsPackable>true</IsPackable>
+    <Description>Uno Platform CAD workspace controls for CadSpace: viewport, ribbon, palettes, managers, command console and navigation.</Description>
     <UnoSingleProject>true</UnoSingleProject><OutputType>Library</OutputType><GenerateLibraryLayout>true</GenerateLibraryLayout>
     <UnoFeatures>SkiaRenderer;GLCanvas;</UnoFeatures><AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>

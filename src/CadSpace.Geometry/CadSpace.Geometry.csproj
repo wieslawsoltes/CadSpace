@@ -1,3 +1,3 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup>
+  <PropertyGroup><TargetFramework>net10.0</TargetFramework><Description>Double-precision CAD geometry for CadSpace: vectors, transforms, OCS, rays/planes, intersections, triangulation and spatial indexing.</Description></PropertyGroup>
 </Project>

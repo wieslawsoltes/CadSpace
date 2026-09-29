@@ -8,4 +8,4 @@ Build Windows/macOS/Linux and browser targets for UI/rendering changes. Test the
 
 Commands need atomicity, undo/redo, degeneracy, finite-value, layer/layout and selection tests. Index changes need brute-force comparisons and stale-cache tests. Exchange features need independently produced fixtures and preservation tests. Mesh algorithms must not be labeled ACIS/B-rep without implementing that kernel.
 
-Release tags package libraries and distributions on GitHub; they do not automatically publish to NuGet.org, sign or notarize. Native AutoCAD, physical GPU, large-corpus, accessibility and security qualification are separate gates. Never include proprietary assets, credentials or confidential customer drawings.
+Release tags attach single-file desktop apps and distributions to a GitHub Release and publish the libraries to NuGet.org through Trusted Publishing; they do not sign or notarize. Native AutoCAD, physical GPU, large-corpus, accessibility and security qualification are separate gates. Never include proprietary assets, credentials or confidential customer drawings.

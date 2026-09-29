@@ -1,4 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup>
+  <PropertyGroup><TargetFramework>net10.0</TargetFramework><Description>Immutable CadSpace drawing model: geometry, styles, blocks, scene cache, spline, hatch and mesh algorithms.</Description></PropertyGroup>
   <ItemGroup><ProjectReference Include="../CadSpace.Geometry/CadSpace.Geometry.csproj" /></ItemGroup>
 </Project>

@@ -1,5 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup><TargetFramework>net10.0</TargetFramework><AllowUnsafeBlocks>true</AllowUnsafeBlocks></PropertyGroup>
+  <PropertyGroup><TargetFramework>net10.0</TargetFramework><Description>CadSpace rendering: cameras, SkiaSharp 2D drafting and OpenGL geometry, text, pattern and selection passes.</Description><AllowUnsafeBlocks>true</AllowUnsafeBlocks></PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../CadSpace.Model/CadSpace.Model.csproj" />
     <PackageReference Include="SkiaSharp" Version="3.119.2" />
