@@ -67,7 +67,9 @@ public static class DxfCodec
             var type = Type(record); Entity entity;
             try
             {
-                entity = DxfEntityReader.Read(record, warnings.Add);
+                entity = DxfEntityReader.Read(DxfRecordEditing.SemanticPairs(record), warnings.Add);
+                if (entity is CompositeEntity compoundSource && compoundSource.SourceRecord.Length > 0)
+                    entity = compoundSource with { SourceRecord = Encode(record) };
                 // Validate before admitting a typed record; bad geometry is retained opaque.
                 var layers = state.Layers;
                 void CollectLayers(Entity e) { if (!layers.ContainsKey(e.Layer)) layers = layers.Add(e.Layer, new(e.Layer)); if (e is PlacedEntity placed) CollectLayers(placed.Geometry); if (e is CompositeEntity compound) foreach (var child in compound.Children) CollectLayers(child); }
@@ -77,9 +79,10 @@ public static class DxfCodec
             {
                 warnings.Add($"{type} was retained as opaque: {ex.Message}"); entity = Opaque(type, record);
             }
-            var layerName = String(record, 8, "0");
+            var fields = DxfRecordEditing.SemanticPairs(DxfEntityReader.Records(record).First());
+            var layerName = String(fields, 8, "0");
             if (!state.Layers.ContainsKey(layerName)) state = state with { Layers = state.Layers.Add(layerName, new(layerName)) };
-            entity = entity with { Handle = String(record, 5), Layer = layerName, ColorIndex = Integer(record, 62, 256), TrueColor = Has(record, 420) ? 0xFF000000u | (uint)Integer(record, 420) : null, LineWeight = Number(record, 370, -100) / 100, Visible = Integer(record, 60) == 0, Layout = LayoutFor(record), Linetype = String(record, 6, "BYLAYER"), LinetypeScale = Number(record, 48, 1) };
+            entity = entity with { Handle = String(fields, 5), Layer = layerName, ColorIndex = Integer(fields, 62, 256), TrueColor = Has(fields, 420) ? 0xFF000000u | (uint)Integer(fields, 420) : null, LineWeight = Number(fields, 370, -100) / 100, Visible = Integer(fields, 60) == 0, Layout = LayoutFor(fields), Linetype = String(fields, 6, "BYLAYER"), LinetypeScale = Number(fields, 48, 1) };
             sourceRecords[entity.Id] = record; return entity;
         }
         var blockRecords = DxfEntityReader.LogicalRecords(sections.FirstOrDefault(s => s.Name == "BLOCKS")?.Pairs ?? []).ToArray();
@@ -125,6 +128,8 @@ public static class DxfCodec
         string Emit(Entity entity)
         {
             if (source != null && originals.TryGetValue(entity.Id, out var original) && entity == original && source.Records.TryGetValue(entity.Id, out var raw)) return Encode(raw);
+            if (source != null && originals.TryGetValue(entity.Id, out var prior) && source.Records.TryGetValue(entity.Id, out var retained)
+                && DxfRecordEditing.TryWrite(entity, prior, retained, warnings.Add, out var patched)) return patched;
             if (entity is OpaqueEntity opaque) return opaque.RawRecord;
             var buffer = new StringBuilder();
             void Pair(int code, object value) => buffer.Append(code.ToString(Culture)).Append('\n').Append(Convert.ToString(value, Culture)).Append('\n');

@@ -114,15 +114,15 @@ public sealed class CadRibbon : UserControl
             case "Home":
                 var draw = new CadRibbonPanel("Draw");
                 draw.Items.Children.Add(new CadRibbonButton("LINE", Invoke, "3DPOLY")); draw.Items.Children.Add(new CadRibbonButton("PLINE", Invoke, "SPLINE"));
-                draw.Items.Children.Add(new CadRibbonButton("CIRCLE", Invoke, "ELLIPSE")); draw.Items.Children.Add(new CadRibbonButton("ARC", Invoke));
-                Small(draw, "RECTANG", "HATCH", "POINT"); _groups.Children.Add(draw);
+                draw.Items.Children.Add(new CadRibbonButton("CIRCLE", Invoke, "ELLIPSE", "DONUT")); draw.Items.Children.Add(new CadRibbonButton("ARC", Invoke));
+                draw.Items.Children.Add(new CadRibbonButton("RECTANG", Invoke, "POLYGON")); Small(draw, "HATCH", "POINT"); _groups.Children.Add(draw);
                 var modify = new CadRibbonPanel("Modify", () => Show("Modify")); Small(modify, "MOVE", "COPY", "STRETCH", "ROTATE", "MIRROR", "SCALE", "TRIM", "EXTEND", "OFFSET", "FILLET", "CHAMFER", "ERASE"); _groups.Children.Add(modify);
                 Group("Annotation", "TEXT", "DIMALIGNED");
                 var layers = new CadRibbonPanel("Layers", () => Invoke("LAYER")); layers.Items.Children.Add(_layer); _groups.Children.Add(layers);
                 var blocks = new CadRibbonPanel("Block"); blocks.Items.Children.Add(new CadRibbonButton("INSERT", Invoke, "BLOCK", "EXPLODE")); _groups.Children.Add(blocks);
                 var properties = new CadRibbonPanel("Properties", () => Invoke("PROPERTIES")); properties.Items.Children.Add(_properties); _groups.Children.Add(properties);
                 var utilities = new CadRibbonPanel("Utilities"); utilities.Items.Children.Add(new CadRibbonButton("DIST", Invoke, "AREA")); Small(utilities, "QSELECT", "SELECTSIMILAR", "SELECTALL"); _groups.Children.Add(utilities); break;
-            case "Modify": Group("Transform", "MOVE", "COPY", "ROTATE", "SCALE", "MIRROR", "STRETCH"); Group("Edit", "TRIM", "EXTEND", "FILLET", "CHAMFER", "BREAK", "JOIN"); Group("Polyline", "PEDIT", "PLINEWID"); Group("Pattern", "OFFSET", "ARRAY", "EXPLODE", "ERASE"); break;
+            case "Modify": Group("Transform", "MOVE", "COPY", "ROTATE", "SCALE", "MIRROR", "STRETCH"); Group("Edit", "TRIM", "EXTEND", "FILLET", "CHAMFER", "BREAK", "JOIN"); Group("Polyline", "PEDIT", "PLINEWID"); Group("Properties", "MATCHPROP"); Group("Pattern", "OFFSET", "ARRAY", "EXPLODE", "ERASE"); break;
             case "Insert": Group("Blocks", "INSERT", "BLOCK", "EXPLODE"); Group("Pattern", "ARRAY"); Group("Content", "TOOLPALETTES", "OPEN"); break;
             case "Annotate": Group("Text", "TEXT"); Group("Dimensions", "DIMALIGNED", "DIST", "AREA"); Group("Hatching", "HATCH"); break;
             case "Layout": Group("Layouts", "LAYOUT_NEW", "LAYOUT_RENAME", "LAYOUT_DELETE"); Group("View", "TOP", "ZOOM"); break;
@@ -130,7 +130,7 @@ public sealed class CadRibbon : UserControl
             case "View": Group("Views", "TOP", "3DORBIT", "ZOOM"); Group("Palettes", "PROPERTIES", "TOOLPALETTES", "LAYER", "LINETYPE"); Group("Workspace", "OPTIONS", "CLEANSCREENON"); break;
             case "Manage": Group("Drawing", "LAYER", "LINETYPE", "QSELECT"); Group("Workspace", "OPTIONS", "RENDERSTATS", "UISTATS"); Group("Recovery", "RECOVER"); break;
             case "Output": Group("Native Project", "SAVE"); Group("Interchange", "EXPORT", "EXPORT_BINARY"); break;
-            case "Polyline": Group("Polyline", "PEDIT", "PLINEWID", "STRETCH", "EXPLODE"); Group("Modify", "MOVE", "COPY", "SCALE", "ERASE"); break;
+            case "Polyline": Group("Polyline", "PEDIT", "JOIN", "PLINEWID", "STRETCH", "EXPLODE"); Group("Modify", "MOVE", "COPY", "SCALE", "ERASE"); break;
             case "Mesh": Group("Mesh", "UNION", "SUBTRACT", "INTERSECT", "ROTATE3D", "MIRROR3D"); Group("View", "3DORBIT", "ZOOM"); break;
             default: Group("Selection", "MOVE", "COPY", "ERASE", "SELECTSIMILAR", "PROPERTIES"); break;
         }
