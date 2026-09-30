@@ -29,10 +29,10 @@ public sealed class SceneAcceleration
     }
     public static Bounds3 TextBounds(SceneText text)
     {
-        var lines = text.Text.Split('\n');
-        var x = text.AxisX * (text.Height * Math.Max(1, lines.Max(l => l.Length)) * 1.5);
+        var layout = SceneTextLayout.For(text);
+        var x = text.AxisX * (text.Height * Math.Max(1, layout.MaximumLineLength) * 1.5);
         var top = text.AxisY * text.Height;
-        var bottom = text.AxisY * (-text.Height * (.3 + (lines.Length - 1) * 1.3));
+        var bottom = text.AxisY * (-text.Height * (.3 + (layout.Lines.Length - 1) * 1.3));
         return Bounds3.Empty.Include(text.Position + top).Include(text.Position + top + x).Include(text.Position + bottom).Include(text.Position + bottom + x);
     }
     public static bool NearScreen(Bounds3 b, Func<Vec3, Vec3> project, Vec3 screen, double tolerance)

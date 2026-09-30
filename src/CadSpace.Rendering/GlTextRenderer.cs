@@ -72,7 +72,7 @@ internal sealed class GlTextRenderer
             foreach (var text in scene.Texts)
             {
                 if (string.IsNullOrEmpty(text.Text)) continue;
-                var lines = text.Text.Split('\n');
+                var lines = SceneTextLayout.For(text).Lines;
                 var width = (int)Math.Ceiling(lines.Max(l => font.MeasureText(l))) + 6;
                 var height = (int)Math.Ceiling(top + metrics.Descent + (lines.Length - 1) * lineHeight) + 3;
                 if (width > AtlasSize || height > AtlasSize) throw new NotSupportedException("A text label exceeds the GPU atlas size. Split long paragraphs into shorter labels.");

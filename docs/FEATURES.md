@@ -45,7 +45,7 @@ Browser checkpoints use acknowledged IndexedDB transactions; the published appli
 
 ## Qualification
 
-430 headless tests include independent synthetic DXF fixtures, native persistence/provenance, Booleans, projection/picking, spatial-index equivalence, modeling, snapping, completion, whole-root windows, grip transactions, STRETCH, Quick Select, recovery failure fallback, style exchange, mixed-scale assignments, continuous spline/polyline patterns, large-coordinate guards and randomized clipped-stroke comparison. CI independently audits canonical ASCII/binary geometry and style exports.
+439 headless tests include independent synthetic DXF fixtures, native persistence/provenance, Booleans, projection/picking, spatial-index equivalence, modeling, snapping, completion, whole-root windows, grip transactions, STRETCH, Quick Select, recovery failure fallback, style exchange, mixed-scale assignments, continuous spline/polyline patterns, large-coordinate guards and randomized clipped-stroke comparison. CI independently audits canonical ASCII/binary geometry and style exports.
 
 Published-browser checks exercise actual mesh/dash pixels, upload/invalidation counters, grips, recovery, compiled layer cells, manager view preservation and UI layer edits inspected through real native checkpoints. Passing these does not imply every interaction has been qualified.
 

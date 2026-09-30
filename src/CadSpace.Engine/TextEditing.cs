@@ -22,6 +22,14 @@ public static class TextEditing
         ArgumentNullException.ThrowIfNull(value);
         if (value.Length > MaximumCharacters || value.Contains('\0') || !multiline && value.IndexOfAny(['\r', '\n']) >= 0)
             throw new ArgumentException("Text must fit 32,768 characters, contain no NUL, and use one line for TEXT.");
+        for (var i = 0; i < value.Length; i++)
+        {
+            if (char.IsHighSurrogate(value[i]))
+            {
+                if (++i >= value.Length || !char.IsLowSurrogate(value[i])) throw new ArgumentException("Text has an unpaired surrogate.");
+            }
+            else if (char.IsLowSurrogate(value[i])) throw new ArgumentException("Text has an unpaired surrogate.");
+        }
     }
     public static void SetText(this CadSession session, Entity expected, string value)
     {
@@ -37,6 +45,13 @@ public static class TextEditing
             throw new ArgumentException("Height must be positive and at most 1e12; rotation must be finite.");
         if (!session.EditableSelection().Any(e => ReferenceEquals(e, expected)))
             throw new InvalidOperationException("The object or selection changed. Reopen the text editor.");
+        if (text.Multiline)
+        {
+            value = SceneTextLayout.NormalizeLineEndings(value);
+            // A native text control may normalize line endings even when no content was edited.
+            // Preserve source bytes and redo history for that no-op (also on format-only changes).
+            if (value == SceneTextLayout.NormalizeLineEndings(text.Text)) value = text.Text;
+        }
         if (text.Text == value && text.Height == height && text.Rotation == rotation) return;
         Entity Replace(Entity e) => e switch {
             TextEntity t => t with { Text = value, Height = height, Rotation = rotation },

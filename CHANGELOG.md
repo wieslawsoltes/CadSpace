@@ -1,5 +1,11 @@
 # Changelog
 
+## Multiline editor reliability and shared display cache (unreleased)
+
+- Fixed multiline TextBox initialization and single-line Properties auto-commit truncation; normalized edited CRLF/CR while preserving no-op text bytes and redo.
+- Reject invalid Unicode edits before creating Undo/dirty state. Reuse weakly cached immutable text lines in Skia, GPU atlas preparation and bounds instead of repeated splitting.
+- Added nine headless checks (439 total), including cache identity/concurrency and exact bounds equivalence. Browser coverage now reopens and applies multiline content without edits before testing Undo; failed checks retain actual recovery payloads.
+
 ## Multiline text exchange and formatting (unreleased)
 
 - Added MTEXT creation and staged text-height/rotation editing in the reusable annotation dialog.

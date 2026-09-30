@@ -30,7 +30,8 @@ public sealed class CadAnnotationEditor : UserControl
         {
             _attributes = [];
             _value.Header = text.Multiline ? "MTEXT content (raw formatting codes)" : "Text content";
-            _value.Text = text.Text; _value.AcceptsReturn = text.Multiline;
+            // AcceptsReturn must be set before Text: a single-line TextBox truncates at the first newline.
+            _value.AcceptsReturn = text.Multiline; _value.Text = text.Text;
             _value.MinHeight = text.Multiline ? 170 : 36; _value.MaxHeight = 260;
             _value.MaxLength = TextEditing.MaximumCharacters;
             _height = CadUi.Identify(new TextBox { Header = "Local text height", Text = text.Height.ToString("R", CultureInfo.InvariantCulture), FontSize = 12 }, "annotation.height", "Local text height");

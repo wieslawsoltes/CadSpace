@@ -126,6 +126,79 @@ internal static class MTextRegression
             var expected=EntityGeometry.BuildScene(s.Document.Drawing).Texts.Single();var actual=EntityGeometry.BuildScene(DxfCodec.Read(DxfCodec.Write(s.Document.Drawing,read.Source).Text).Drawing).Texts.Single();
             Check(expected.Position.DistanceTo(actual.Position)<1e-10 && expected.AxisX.DistanceTo(actual.AxisX)<1e-10 && expected.AxisY.DistanceTo(actual.AxisY)<1e-10);
         });
+        test("MTEXT editing normalizes CRLF and CR to LF without losing lines", () => {
+            var old = new TextEntity(default, "Before", Multiline: true); var s = Session(old);
+            s.SetText(old, "A\r\nB\rC\nD");
+            Check(TextEditing.TextOf(s.Document.Drawing.Entities.Single())!.Text == "A\nB\nC\nD");
+        });
+        test("unchanged MTEXT line-ending differences preserve snapshot and redo", () => {
+            var old = new TextEntity(default, "A\r\nB\rC", Multiline: true); var s = Session(old);
+            s.SetText(old, "Other"); s.Document.Undo(); var before = s.Document.Drawing;
+            s.SetText(old, "A\nB\nC");
+            Check(ReferenceEquals(before, s.Document.Drawing) && s.Document.CanRedo);
+        });
+        test("format-only MTEXT edits retain original content bytes", () => {
+            var old = new TextEntity(default, "A\r\nB\rC", Multiline: true); var s = Session(old);
+            s.SetTextProperties(old, "A\nB\nC", 18, 15);
+            Check(TextEditing.TextOf(s.Document.Drawing.Entities.Single())!.Text == old.Text);
+        });
+        test("direct and placed scene text recognize all newline forms", () => {
+            var t = new TextEntity(default, "A\rB\r\nC\nD\\PE", Multiline: true);
+            foreach (var e in new Entity[] { t, new PlacedEntity(t, Transform3.RotationZ(17)) })
+                Check(SceneTextLayout.For(EntityGeometry.BuildScene(Drawing.Empty with { Entities = [e] }).Texts.Single()).Lines.SequenceEqual(new[] { "A", "B", "C", "D", "E" }));
+        });
+        test("invalid Unicode text edits reject before dirty state changes", () => {
+            var old = new TextEntity(default, "Before", Multiline: true); var s = Session(old);
+            var before = s.Document.Drawing;
+            foreach (var value in new[] { "A\ud800", "A\udc00B" }) Reject(() => s.SetText(old, value));
+            Check(ReferenceEquals(before, s.Document.Drawing) && !s.Document.CanUndo);
+        });
+        test("scene text layouts normalize lines, preserve empty lines and reject stale record copies", () => {
+            var t = new SceneText(Guid.NewGuid(), "0", 0, default, "A\r\nB\r\n", 12, 0);
+            var layout = SceneTextLayout.For(t);
+            Check(layout.Lines.SequenceEqual(new[] { "A", "B", "" }) && layout.MaximumLineLength == 1);
+            Check(ReferenceEquals(layout, SceneTextLayout.For(t)));
+            var copy = t with { Text = "Longer" };
+            Check(SceneTextLayout.For(copy).MaximumLineLength == 6 && !ReferenceEquals(layout, SceneTextLayout.For(copy)));
+            Check(SceneTextLayout.For(t with { Text = "" }).Lines.Length == 1);
+        });
+        test("scene text layout publication is safe under concurrent queries", () => {
+            var t = new SceneText(Guid.NewGuid(), "0", 0, default, "A\nB", 12, 0);
+            var layouts = new SceneTextLayout[256];
+            Parallel.For(0, layouts.Length, i => layouts[i] = SceneTextLayout.For(t));
+            Check(layouts.All(x => ReferenceEquals(x, layouts[0]) && x.Lines.Length == 2));
+        });
+        test("cached text bounds equal the previous multiline calculation", () => {
+            var random = new Random(412);
+            for (var n = 0; n < 500; n++)
+            {
+                var content = string.Join('\n', Enumerable.Range(0, random.Next(1, 20)).Select(_ => new string('x', random.Next(0, 100))));
+                var t = new SceneText(Guid.NewGuid(), "0", 0, new(10,20,30), content, random.Next(1, 100), 0) { AxisX = new(2,3,1), AxisY = new(-1,2,3) };
+                var lines = content.Split('\n');
+                var x = t.AxisX * (t.Height * Math.Max(1, lines.Max(l => l.Length)) * 1.5);
+                var top = t.AxisY * t.Height; var bottom = t.AxisY * (-t.Height * (.3 + (lines.Length - 1) * 1.3));
+                var expected = Bounds3.Empty.Include(t.Position + top).Include(t.Position + top + x).Include(t.Position + bottom).Include(t.Position + bottom + x);
+                Check(SceneAcceleration.TextBounds(t) == expected);
+            }
+        });
+        test("warmed text layout reuse avoids repeated line-splitting allocations", () => {
+            var labels = Enumerable.Range(0, 2000).Select(i => new SceneText(Guid.NewGuid(), "0", 0, default, string.Join('\n', Enumerable.Repeat(new string('x', 80) + i, 8)), 12, 0)).ToArray();
+            foreach (var t in labels) _ = SceneTextLayout.For(t);
+            static (long Count, long Bytes, double Milliseconds) Measure(SceneText[] labels, bool cached)
+            {
+                long count = 0; var watch = new System.Diagnostics.Stopwatch();
+                var allocated = GC.GetAllocatedBytesForCurrentThread(); watch.Start();
+                for (var repeat = 0; repeat < 20; repeat++) foreach (var t in labels)
+                    count += cached ? SceneTextLayout.For(t).Lines.Length : t.Text.Split('\n').Length;
+                watch.Stop(); return (count, GC.GetAllocatedBytesForCurrentThread() - allocated, watch.Elapsed.TotalMilliseconds);
+            }
+            _ = Measure(labels, true); var original = Measure(labels, false); var optimized = Measure(labels, true);
+            Check(original.Count == optimized.Count && optimized.Bytes < original.Bytes / 100);
+            var report = $"BENCH text layouts, 2000 eight-line labels x20: split {original.Milliseconds:0.###} ms/{original.Bytes} bytes; cached {optimized.Milliseconds:0.###} ms/{optimized.Bytes} bytes; equal line count={optimized.Count}. Warm lookup only, not FPS.";
+            Console.WriteLine(report);
+            var output = Environment.GetEnvironmentVariable("CADSPACE_EDITING_OUTPUT");
+            if (output != null) { Directory.CreateDirectory(output); File.WriteAllText(Path.Combine(output, "text-layout-performance.txt"), report); }
+        });
         test("MATCHPROP no-op preserves clean state and redo", () => {
             var a=new LineEntity(default,Vec3.UnitX);var b=new LineEntity(Vec3.UnitY,new(1,1));var s=Session(a);s.Add("B",b);s.Document.Undo();s.Document.Redo();s.Document.MarkSaved();
             var before=s.Document.Drawing;s.MatchProperties(a.Id,[b.Id]);Check(ReferenceEquals(before,s.Document.Drawing) && !s.Document.IsDirty);

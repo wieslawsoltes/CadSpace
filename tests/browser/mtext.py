@@ -33,6 +33,7 @@ async def main():
                 hit=next((r for r in records if r['generation']>after and predicate(r['project']['drawing'])),None)
                 if hit:return hit
                 await page.wait_for_timeout(200)
+            (output/'mtext-unexpected-checkpoints.json').write_text(json.dumps(records,indent=2))
             raise AssertionError('No newer checkpoint for the expected MTEXT operation')
         async def download(binary=False):
             await click(page,events,'tab.Output')
@@ -52,6 +53,10 @@ async def main():
             await page.screenshot(path=str(output/'77-mtext-formatting.png'),full_page=True)
             await click(page,events,'annotation.dialog.PrimaryButton')
             applied=await checkpoint(lambda d: len(d['entities'])==1 and d['entities'][0].get('text')=='Edited\nMultiline' and d['entities'][0].get('height')==18 and d['entities'][0].get('rotation')==15)
+            # Reopening and applying with no edits must retain both lines and the Undo stack.
+            await command(page,'DDEDIT');await click(page,events,'annotation.dialog.PrimaryButton')
+            await command(page,'ZOOM')
+            await page.screenshot(path=str(output/'79-mtext-reopened.png'),full_page=True)
             await command(page,'DDEDIT');await fill('annotation.value','Cancelled');await fill('annotation.height','90')
             await click(page,events,'annotation.dialog.CloseButton');await command(page,'POINT','100,100')
             cancelled=await checkpoint(lambda d: len(d['entities'])==2 and d['entities'][0].get('text')=='Edited\nMultiline' and d['entities'][0].get('height')==18,applied['generation'])
@@ -83,6 +88,11 @@ async def main():
             assert not [e for e in events if e['type']=='pageerror' or '3D renderer error:' in e.get('text','')],events[-20:]
             print('PASS MTEXT ribbon creation; staged content/height/rotation Apply/Cancel and Undo; real file import; Unicode chunked ASCII/binary downloads retain source metadata')
         finally:
+            try:
+                saved=await page.evaluate("""async () => Promise.all(JSON.parse(await CadSpaceRecoveryStorage.list()).map(async key=>({key,value:await CadSpaceRecoveryStorage.read(key)})))""")
+                (output/'mtext-recovery-slots.json').write_text(json.dumps(saved,indent=2))
+            except Exception as error:
+                events.append({'type':'diagnostic','text':str(error)})
             await page.screenshot(path=str(output/'mtext-last-state.png'),full_page=True)
             (output/'mtext-console.json').write_text(json.dumps(events,indent=2));await browser.close()
 asyncio.run(main())
