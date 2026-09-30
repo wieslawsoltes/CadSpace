@@ -13,6 +13,7 @@ internal static class CadShellArtwork
         void Arrow(float x, float y) { L(x - 5, y, x + 5, y); L(x + 5, y, x, y - 4); L(x + 5, y, x, y + 4); }
         switch (kind)
         {
+            case "MTEXT": L(4, 4, 18, 4); L(11, 4, 11, 26); L(20, 9, 29, 9); L(20, 16, 29, 16); L(20, 23, 29, 23); break;
             case "DDEDIT": case "EATTEDIT": R(3, 4, 19, 21); L(7, 9, 18, 9); L(7, 14, 16, 14); L(15, 28, 29, 14); L(15, 28, 19, 27); break;
             case "POLYGON":
                 using (var path = new SKPath()) { for (var i = 0; i < 6; i++) { var a = MathF.PI * i / 3; var x = 16 + 12 * MathF.Cos(a); var y = 16 + 12 * MathF.Sin(a); if (i == 0) path.MoveTo(x, y); else path.LineTo(x, y); } path.Close(); canvas.DrawPath(path, p); } break;

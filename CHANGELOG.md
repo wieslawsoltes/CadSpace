@@ -1,5 +1,13 @@
 # Changelog
 
+## Multiline text exchange and formatting (unreleased)
+
+- Added MTEXT creation and staged text-height/rotation editing in the reusable annotation dialog.
+- Fixed native export of imported/placed MTEXT; retained source metadata for content/height edits and emitted Unicode-safe long-text chunks.
+- Prevented styled TEXT local angle/position changes from reusing stale DXF coordinates; rejected unsupported MTEXT shear/nonuniform scale.
+- No-op MATCHPROP preserves dirty/Undo/redo state. Added 29 headless cases (430 total), six independent MTEXT audits (18 total), and real browser download verification.
+- See docs/MTEXT.md for exact scope and remaining limitations.
+
 ## Analytic drafting, DXF retention and annotations (unreleased)
 
 - Added analytic line/arc/open-polyline JOIN, reversible taper preservation and indexed endpoint matching; extended PEDIT with reusable vertex editing, splitting and explicit straight reconnection.

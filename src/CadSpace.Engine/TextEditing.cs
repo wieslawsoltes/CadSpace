@@ -26,12 +26,20 @@ public static class TextEditing
     public static void SetText(this CadSession session, Entity expected, string value)
     {
         var text = TextOf(expected) ?? throw new NotSupportedException("Select an editable TEXT or MTEXT object.");
+        SetTextProperties(session, expected, value, text.Height, text.Rotation);
+    }
+    /// <summary>Edit content, local height and local rotation together without changing the insertion or placement.</summary>
+    public static void SetTextProperties(this CadSession session, Entity expected, string value, double height, double rotation)
+    {
+        var text = TextOf(expected) ?? throw new NotSupportedException("Select an editable TEXT or MTEXT object.");
         ValidateValue(value, text.Multiline);
+        if (!double.IsFinite(height) || height <= 0 || height > 1e12 || !double.IsFinite(rotation))
+            throw new ArgumentException("Height must be positive and at most 1e12; rotation must be finite.");
         if (!session.EditableSelection().Any(e => ReferenceEquals(e, expected)))
             throw new InvalidOperationException("The object or selection changed. Reopen the text editor.");
-        if (text.Text == value) return;
+        if (text.Text == value && text.Height == height && text.Rotation == rotation) return;
         Entity Replace(Entity e) => e switch {
-            TextEntity t => t with { Text = value },
+            TextEntity t => t with { Text = value, Height = height, Rotation = rotation },
             PlacedEntity p => p with { Geometry = Replace(p.Geometry) },
             _ => throw new NotSupportedException("The selected object is not text.")
         };

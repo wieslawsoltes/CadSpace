@@ -111,6 +111,7 @@ public sealed partial class App : Application
         if (!result.Warnings.IsEmpty)
         {
             var dialog = new ContentDialog { XamlRoot = _workspace!.XamlRoot, Title = "Review DXF export", Content = new ScrollViewer { MaxHeight = 360, Content = new TextBlock { Text = string.Join("\n\n", result.Warnings) + "\n\nExport a copy and keep your original file. Use Save for a lossless native project.", TextWrapping = TextWrapping.Wrap } }, PrimaryButtonText = "Export copy", CloseButtonText = "Cancel", DefaultButton = ContentDialogButton.Close };
+            CadUi.DescribeDialog(dialog, "export.dialog");
             if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
         }
         var picker = new FileSavePicker { SuggestedStartLocation = PickerLocationId.DocumentsLibrary, SuggestedFileName = Path.GetFileNameWithoutExtension(document.DisplayName) + (result.Warnings.IsEmpty ? "" : "-export") };
@@ -138,7 +139,8 @@ public sealed partial class App : Application
     private async Task Dialog(string title, string message)
     {
         if (_workspace?.XamlRoot == null) return;
-        await new ContentDialog { XamlRoot = _workspace.XamlRoot, Title = title, Content = new ScrollViewer { MaxHeight = 420, Content = new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap } }, CloseButtonText = "Close" }.ShowAsync();
+        var dialog = new ContentDialog { XamlRoot = _workspace.XamlRoot, Title = title, Content = new ScrollViewer { MaxHeight = 420, Content = new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap } }, CloseButtonText = "Close" };
+        CadUi.DescribeDialog(dialog, "file.report"); await dialog.ShowAsync();
     }
     private sealed class OpenDrawing
     {

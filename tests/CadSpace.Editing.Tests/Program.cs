@@ -195,6 +195,7 @@ Test("indexed join builds 10,000 unordered segments",()=>{
 });
 RecordSafetyRegression.Register(Test);
 AnnotationRegression.Register(Test);
+MTextRegression.Register(Test);
 var failed=0;
 foreach(var (name,run) in tests)try{run();Console.WriteLine("PASS "+name);}catch(Exception e){failed++;Console.Error.WriteLine($"FAIL {name}: {e}");}
 Console.WriteLine($"{tests.Count-failed}/{tests.Count} drafting/editing regressions passed.");return failed==0?0:1;

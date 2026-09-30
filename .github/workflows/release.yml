@@ -49,6 +49,7 @@ jobs:
           python -m pip install ezdxf==1.4.4
           python tests/fixtures/generate.py
           python tests/fixtures/editing.py
+          python tests/fixtures/mtext.py
       - run: dotnet run --project tests/CadSpace.Tests -c Release
       - run: dotnet run --project tests/CadSpace.Exchange.Tests -c Release
       - run: dotnet run --project tests/CadSpace.Persistence.Tests -c Release
@@ -65,6 +66,7 @@ jobs:
           python tests/fixtures/audit_styles.py artifacts/styles-audit
           dotnet run --project tests/CadSpace.Editing.Tests -c Release
           python tests/fixtures/editing.py artifacts/editing-audit
+          python tests/fixtures/mtext.py artifacts/editing-audit
 
   desktop:
     name: Desktop (${{ matrix.rid }})

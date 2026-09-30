@@ -38,9 +38,11 @@ Read the [workspace guide](docs/WORKSPACE.md) for individual control APIs, integ
 
 `JOIN` / `PEDIT Join` now retain analytic arcs and tapered widths. The bounded PEDIT vertex editor can move, split, delete or straighten supported segments. `POLYGON`, `DONUT`, `MATCHPROP`, `DDEDIT` and `EATTEDIT` connect to the command line, ribbon, menus and Properties. Supported source-backed edits preserve native entity/attribute records, application data and XDATA instead of flattening every modified object. Unsupported changes retain explicit conversion warnings. See [editing workflows and exact boundaries](docs/EDITING.md).
 
+Imported MTEXT content/height edits now preserve their native source metadata. New `MTEXT` creation, Unicode-safe long-text chunks and staged height/rotation controls are described in the [multiline text guide](docs/MTEXT.md).
+
 ## Drafting, modeling and interchange
 
-The engine exposes **82 command workflows**, including UI commands. Names do not imply every AutoCAD option. See the [command reference](docs/COMMANDS.md).
+The engine exposes **83 command workflows**, including UI commands. Names do not imply every AutoCAD option. See the [command reference](docs/COMMANDS.md).
 
 | Area | Implemented scope |
 | --- | --- |
@@ -376,6 +378,7 @@ The reproducible suites compare 100,000-line indexed queries with linear impleme
 python -m pip install ezdxf==1.4.4
 python tests/fixtures/generate.py
 python tests/fixtures/editing.py
+python tests/fixtures/mtext.py
 
 dotnet run --project tests/CadSpace.Tests -c Release
 dotnet run --project tests/CadSpace.Exchange.Tests -c Release
@@ -385,7 +388,7 @@ dotnet run --project tests/CadSpace.Performance.Tests -c Release
 dotnet run --project tests/CadSpace.Editing.Tests -c Release
 ```
 
-The original five suites contain **334 headless regressions**; `tests/CadSpace.Editing.Tests` adds **67 editing and record-safety checks**, for **401 total**. CI independently audits tested ASCII/binary geometry, styles and widths with zero errors/repairs required; builds Windows/macOS/Linux; packages all libraries; publishes trimmed WebAssembly; and runs real rendered-browser interaction checks. Screenshots, console logs and native checkpoints are retained as artifacts. Current-main builds deploy to GitHub Pages and verify the served commit. Release runs for `v*` tags or a supplied manual version: it repeats the release tests, publishes self-contained single-file desktop executables for Windows, macOS and Linux (x64 and arm64), packs all six libraries with symbols, archives browser/source distributions and emits `SHA256SUMS.txt`. Tags attach the assets to a GitHub Release and publish the packages to NuGet.org with [Trusted Publishing](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing) (OIDC, no stored API key) from the protected `nuget` environment; manual runs are dry runs that only upload workflow artifacts. Signing and notarization are not automatic.
+The original five suites contain **334 headless regressions**; `tests/CadSpace.Editing.Tests` adds **96 editing and record-safety checks**, for **430 total**. CI independently audits tested ASCII/binary geometry, styles and widths with zero errors/repairs required; builds Windows/macOS/Linux; packages all libraries; publishes trimmed WebAssembly; and runs real rendered-browser interaction checks. Screenshots, console logs and native checkpoints are retained as artifacts. Current-main builds deploy to GitHub Pages and verify the served commit. Release runs for `v*` tags or a supplied manual version: it repeats the release tests, publishes self-contained single-file desktop executables for Windows, macOS and Linux (x64 and arm64), packs all six libraries with symbols, archives browser/source distributions and emits `SHA256SUMS.txt`. Tags attach the assets to a GitHub Release and publish the packages to NuGet.org with [Trusted Publishing](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing) (OIDC, no stored API key) from the protected `nuget` environment; manual runs are dry runs that only upload workflow artifacts. Signing and notarization are not automatic.
 
 Software-backed Chromium is not physical-GPU, accessibility or Autodesk interoperability qualification. Uno's host still uses framebuffer readback through a pinned RGBA adapter, **not zero-copy WebGPU/Vulkan**. Analytic solids, full typography/dynamic blocks/constraints, paper-space viewports/plotting and complete UI/API parity remain substantial work. Read the [coverage matrix](docs/FEATURES.md).
 
