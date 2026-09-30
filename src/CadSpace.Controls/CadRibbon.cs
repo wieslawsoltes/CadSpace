@@ -22,10 +22,15 @@ public sealed class CadRibbonButton : UserControl
 {
     public CadRibbonButton(string command, Action<string> invoke, params string[] alternatives)
     {
-        var body = CadTheme.Grid(54, 18); body.Width = 54;
-        var button = CadUi.IconButton(command, CadUi.Label(command), () => invoke(command), "command." + command, 52);
+        var title = CadUi.Label(command);
+        // Keep long command captions legible; overflow is handled by the ribbon, not by clipping names.
+        var width = Math.Clamp(title.Length * 5.3 + (alternatives.Length > 0 ? 18 : 10), 54, 112);
+        var body = CadTheme.Grid(54, 18); body.Width = width;
+        var button = CadUi.IconButton(command, title, () => invoke(command), "command." + command, 52);
+        button.Width = width - 2;
         button.Content = new CadIcon { Kind = command, Width = 33, Height = 33, IsHitTestVisible = false }; CadTheme.At(body, button, 0);
-        var label = CadUi.TextButton(CadUi.Label(command) + (alternatives.Length > 0 ? " ▾" : ""), () => { if (alternatives.Length == 0) invoke(command); }, "label." + command);
+        var label = CadUi.TextButton(title + (alternatives.Length > 0 ? " ▾" : ""), () => { if (alternatives.Length == 0) invoke(command); }, "label." + command);
+        ToolTipService.SetToolTip(label, title);
         label.MinHeight = label.Height = 18; label.FontSize = 10; label.Padding = new Thickness(0); label.HorizontalAlignment = HorizontalAlignment.Stretch;
         if (alternatives.Length > 0)
         {

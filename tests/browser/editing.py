@@ -45,7 +45,11 @@ async def main():
             await page.wait_for_function("document.title.includes('CadSpace')",timeout=90000);await page.wait_for_timeout(3000)
             await click(page,events,'quick.NEW')
             await command(page,'LINE','-10,0','0,0','','ARC','0,0','7.071067811865,2.928932188135','10,10','SELECTALL')
-            await click(page,events,'tab.Modify');await click(page,events,'command.JOIN');await command(page,'ZOOM')
+            await click(page,events,'tab.Modify')
+            controls=await bounds(page,events)
+            assert controls['label.MATCHPROP'][2]>=85, 'Long command captions must not be squeezed into a 54-unit button'
+            await click(page,events,'command.JOIN');await command(page,'ZOOM')
+            await shot('76-editing-ribbon.png')
             joined, joined_generation=await checkpoint(lambda e: len(e)==1 and e[0]['type']=='LWPOLYLINE' and len(e[0]['vertices'])==3 and abs(e[0]['vertices'][1]['bulge'])>.4)
             await command(page,'PEDIT','EDIT')
             await fill('polylineDialog.index','2');await click(page,events,'polylineDialog.read')
