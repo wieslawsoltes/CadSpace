@@ -84,9 +84,28 @@ async def main():
             assert 'Source-backed Ω 😀'.encode() in data
             assert '*' in await page.title(), 'DXF copies must not clear native dirty state'
             await page.screenshot(path=str(output/'78-mtext-export-complete.png'),full_page=True)
+            # Native Save uses the same completion protocol, but only native completion clears dirty state.
+            async with page.expect_download(timeout=30000) as request:
+                await click(page,events,'quick.SAVE')
+            saved=await request.value
+            native=output/'mtext-ui.cadspace';await saved.save_as(native)
+            project=json.loads(native.read_text(encoding='utf-8-sig'))
+            root=project['drawing']['entities'][0]
+            assert root['type']=='PLACED' and root['matrix'][3]==[10,20,0]
+            text=root['geometry'][0]
+            assert text['text']==value and text['height']==6
+            assert project['dxfOriginal']==RAW, 'Native save must retain the untouched original DXF'
+            await page.wait_for_function("!document.title.includes('*')",timeout=10000)
+            # Reopen the actual downloaded project through the real OPEN control, not a mutation hook.
+            async with page.expect_file_chooser(timeout=20000) as chooser:
+                await click(page,events,'quick.OPEN')
+            await (await chooser.value).set_files(str(native))
+            await page.wait_for_function("document.title.includes('mtext-ui.cadspace')",timeout=30000)
+            assert '*' not in await page.title()
+            await page.screenshot(path=str(output/'80-native-save-reopened.png'),full_page=True)
             (output/'mtext-checkpoint.json').write_text(json.dumps(applied,indent=2))
             assert not [e for e in events if e['type']=='pageerror' or '3D renderer error:' in e.get('text','')],events[-20:]
-            print('PASS MTEXT ribbon creation; staged content/height/rotation Apply/Cancel and Undo; real file import; Unicode chunked ASCII/binary downloads retain source metadata')
+            print('PASS MTEXT ribbon creation; staged content/height/rotation Apply/Cancel and Undo; real file import; Unicode chunked ASCII/binary downloads retain source metadata; native Save download and real reopen')
         finally:
             try:
                 saved=await page.evaluate("""async () => Promise.all(JSON.parse(await CadSpaceRecoveryStorage.list()).map(async key=>({key,value:await CadSpaceRecoveryStorage.read(key)})))""")

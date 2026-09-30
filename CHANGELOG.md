@@ -1,5 +1,10 @@
 # Changelog
 
+## File-provider completion (unreleased)
+
+- Complete deferred provider updates after native and DXF writes so browser fallback downloads actually start; unsuccessful completion cannot mark the native drawing saved or clear recovery.
+- Extend the MTEXT browser regression to verify the downloaded native project and reopen it through the actual file chooser.
+
 ## Multiline editor reliability and shared display cache (unreleased)
 
 - Fixed multiline TextBox initialization and single-line Properties auto-commit truncation; normalized edited CRLF/CR while preserving no-op text bytes and redo.

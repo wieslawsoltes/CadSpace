@@ -35,3 +35,9 @@ python tests/fixtures/mtext.py artifacts/editing-audit
 Primary references: Autodesk's MTEXT group-code reference and ezdxf's tag-format documentation:
 - https://help.autodesk.com/cloudhelp/2023/ENU/AutoCAD-DXF/files/GUID-5E5DB93B-F8D3-4433-ADF7-E92E250D2BAB.htm
 - https://ezdxf.readthedocs.io/en/stable/dxfinternals/dxftags.html
+
+## Save and download completion
+
+The application defers provider updates before writing and awaits `CachedFileManager.CompleteUpdatesAsync` for both native saves and DXF exports. This is required to trigger Uno's download-picker fallback; writing its temporary file alone does not download it. Only a successful provider status permits a save-success message and native dirty/recovery clearing. A failed write is not completed as a partial download, and an unsuccessful provider status is reported. DXF export copies leave native dirty state unchanged.
+
+The browser regression verifies actual ASCII, binary and native-project downloads, native provenance/content and reopening the downloaded `.cadspace` file. Provider completion can initiate a browser download but cannot prove that the user retained the file afterward; keep backups and verify downloads. Reference: https://platform.uno/docs/articles/features/windows-storage-pickers.html
