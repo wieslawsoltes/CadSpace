@@ -1,5 +1,24 @@
 # Changelog
 
+## File-provider completion (unreleased)
+
+- Complete deferred provider updates after native and DXF writes so browser fallback downloads actually start; unsuccessful completion cannot mark the native drawing saved or clear recovery.
+- Extend the MTEXT browser regression to verify the downloaded native project and reopen it through the actual file chooser.
+
+## Multiline editor reliability and shared display cache (unreleased)
+
+- Fixed multiline TextBox initialization and single-line Properties auto-commit truncation; normalized edited CRLF/CR while preserving no-op text bytes and redo.
+- Reject invalid Unicode edits before creating Undo/dirty state. Reuse weakly cached immutable text lines in Skia, GPU atlas preparation and bounds instead of repeated splitting.
+- Added nine headless checks (439 total), including cache identity/concurrency and exact bounds equivalence. Browser coverage now reopens and applies multiline content without edits before testing Undo; failed checks retain actual recovery payloads.
+
+## Multiline text exchange and formatting (unreleased)
+
+- Added MTEXT creation and staged text-height/rotation editing in the reusable annotation dialog.
+- Fixed native export of imported/placed MTEXT; retained source metadata for content/height edits and emitted Unicode-safe long-text chunks.
+- Prevented styled TEXT local angle/position changes from reusing stale DXF coordinates; rejected unsupported MTEXT shear/nonuniform scale.
+- No-op MATCHPROP preserves dirty/Undo/redo state. Added 29 headless cases (430 total), six independent MTEXT audits (18 total), and real browser download verification.
+- See docs/MTEXT.md for exact scope and remaining limitations.
+
 ## Analytic drafting, DXF retention and annotations (unreleased)
 
 - Added analytic line/arc/open-polyline JOIN, reversible taper preservation and indexed endpoint matching; extended PEDIT with reusable vertex editing, splitting and explicit straight reconnection.

@@ -89,7 +89,16 @@ internal static class DxfRecordEditing
                 case (ArcEntity x, ArcEntity y) when kind == "ARC":
                     subclass = "AcDbCircle"; if (x.Center != y.Center) Position(10, x.Center); if (x.Radius != y.Radius) geometry[40] = F(x.Radius);
                     record = Patch(record, new() { [50] = F(x.StartAngle), [51] = F(x.EndAngle) }, "AcDbArc"); break;
+                case (TextEntity { Multiline: true } x, TextEntity { Multiline: true } y) when kind == "MTEXT":
+                    // The imported MTEXT frame already encodes WCS orientation and insertion.
+                    if (x.Position != y.Position || x.Rotation != y.Rotation) return false;
+                    subclass = "AcDbMText";
+                    if (x.Text != y.Text && !DxfTextContent.TryReplace(record, x.Text, out record)) return false;
+                    if (x.Height != y.Height) geometry[40] = F(x.Height);
+                    break;
                 case (TextEntity { Multiline: false } x, TextEntity { Multiline: false } y) when kind == "TEXT":
+                    // Styled TEXT may encode its original angle/position in a placement rather than the leaf.
+                    if (after is PlacedEntity && (x.Position != y.Position || x.Rotation != y.Rotation)) return false;
                     if (x.Text.IndexOfAny(['\r', '\n', '\0']) >= 0) return false;
                     subclass = "AcDbText"; if (x.Position != y.Position) Position(10, x.Position);
                     if (x.Text != y.Text) geometry[1] = x.Text; if (x.Height != y.Height) geometry[40] = F(x.Height); if (x.Rotation != y.Rotation) geometry[50] = F(x.Rotation); break;

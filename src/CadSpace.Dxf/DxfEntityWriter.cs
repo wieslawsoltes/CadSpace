@@ -11,7 +11,7 @@ internal static class DxfEntityWriter
     public static bool TryWrite(Entity entity, Drawing drawing, Func<Entity, string> emit, Func<string> nextHandle, Action<string> warn, out string text)
     {
         text = "";
-        if (entity is not (Polyline3DEntity or SplineEntity or PlacedEntity or CompositeEntity or HatchRegionEntity or HatchEntity or MeshEntity)) return false;
+        if (entity is not (Polyline3DEntity or SplineEntity or PlacedEntity or CompositeEntity or HatchRegionEntity or HatchEntity or MeshEntity or TextEntity { Multiline: true })) return false;
         var buffer = new StringBuilder();
         void Pair(int code, object value) => buffer.Append(code).Append('\n').Append(Convert.ToString(value, CultureInfo.InvariantCulture)).Append('\n');
         void Point(int code, Vec3 p) { Pair(code, p.X); Pair(code + 10, p.Y); Pair(code + 20, p.Z); }
@@ -101,6 +101,18 @@ internal static class DxfEntityWriter
                         buffer.Append(emit(Style(new Polyline3DEntity(EntityGeometry.PolylinePoints(poly).Select(t.Point).ToImmutableArray(), poly.Closed) { ContinuousLinetype = poly.ContinuousLinetype })));
                     }
                     break;
+                case TextEntity { Multiline: true } multiline:
+                    var textBasis = Transform3.RotationZ(multiline.Rotation).Then(t);
+                    var sx = textBasis.X.Length; var sy = textBasis.Y.Length;
+                    if (!double.IsFinite(sx) || !double.IsFinite(sy) || sx <= 1e-12 || sy <= 1e-12 ||
+                        Math.Abs(sx - sy) > 1e-9 * Math.Max(sx, sy) || Math.Abs((textBasis.X / sx).Dot(textBasis.Y / sy)) > 1e-9)
+                        throw new NotSupportedException("MTEXT export requires orthogonal, equally scaled text-plane axes. Save a native project for shear/nonuniform scaling.");
+                    if (!double.IsFinite(multiline.Height * sy) || multiline.Height * sy <= 0) throw new NotSupportedException("The transformed MTEXT height is outside the numeric range.");
+                    Start("MTEXT", "AcDbMText"); Point(10, t.Point(multiline.Position)); Pair(40, multiline.Height * sy);
+                    Pair(41, 0); Pair(71, 1);
+                    foreach (var chunk in DxfTextContent.Chunks(multiline.Text)) Pair(chunk.Code, chunk.Value);
+                    Point(210, (textBasis.X / sx).Cross(textBasis.Y / sy).Normalized); Point(11, textBasis.X / sx);
+                    break;
                 case TextEntity textEntity when !textEntity.Multiline:
                     var basis = Transform3.RotationZ(textEntity.Rotation).Then(t); var x = basis.X; var y = basis.Y; var n = x.Cross(y).Normalized;
                     var ocs = Coordinates3D.ObjectCoordinateSystem(n); var local = Coordinates3D.Inverse(ocs); var perpendicular = y.Dot(n.Cross(x.Normalized));
@@ -131,6 +143,7 @@ internal static class DxfEntityWriter
         }
         switch (entity)
         {
+            case TextEntity multiline: Placed(new PlacedEntity(multiline, Transform3.Identity)); break;
             case Polyline3DEntity poly:
                 Start("POLYLINE", "AcDb3dPolyline"); Pair(66, 1); Point(10, default); Pair(70, 8 | (poly.Closed ? 1 : 0) | (poly.ContinuousLinetype ? 128 : 0));
                 foreach (var p in poly.Points) { Start("VERTEX", "AcDbVertex", nextHandle()); Pair(100, "AcDb3dPolylineVertex"); Point(10, p); Pair(70, 32); }

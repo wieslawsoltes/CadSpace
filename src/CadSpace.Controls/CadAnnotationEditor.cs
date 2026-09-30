@@ -1,4 +1,6 @@
 using System.Collections.Immutable;
+using System.Globalization;
+using CadSpace.Geometry;
 using CadSpace.Dxf;
 using CadSpace.Engine;
 using CadSpace.Model;
@@ -13,6 +15,7 @@ public sealed class CadAnnotationEditor : UserControl
     private readonly CadSession _session;
     private readonly Entity _expected;
     private readonly TextBox _value;
+    private readonly TextBox? _height, _rotation;
     private readonly TextBlock _status = CadTheme.Text("", 11, CadTheme.Muted);
     private readonly ImmutableArray<DxfAttributeValue> _attributes;
     private readonly Dictionary<int, string> _changes = new();
@@ -27,10 +30,13 @@ public sealed class CadAnnotationEditor : UserControl
         {
             _attributes = [];
             _value.Header = text.Multiline ? "MTEXT content (raw formatting codes)" : "Text content";
-            _value.Text = text.Text; _value.AcceptsReturn = text.Multiline;
+            // AcceptsReturn must be set before Text: a single-line TextBox truncates at the first newline.
+            _value.AcceptsReturn = text.Multiline; _value.Text = text.Text;
             _value.MinHeight = text.Multiline ? 170 : 36; _value.MaxHeight = 260;
             _value.MaxLength = TextEditing.MaximumCharacters;
-            _status.Text = text.Multiline ? "Edits the stored MTEXT content. Full rich-text formatting and layout are not implemented." : "Position, height, rotation, placement and common properties are retained.";
+            _height = CadUi.Identify(new TextBox { Header = "Local text height", Text = text.Height.ToString("R", CultureInfo.InvariantCulture), FontSize = 12 }, "annotation.height", "Local text height");
+            _rotation = CadUi.Identify(new TextBox { Header = "Local rotation (degrees)", Text = text.Rotation.ToString("R", CultureInfo.InvariantCulture), FontSize = 12 }, "annotation.rotation", "Local text rotation");
+            _status.Text = text.Multiline ? "Edits the stored MTEXT content. Full rich-text formatting and layout are not implemented." : "Position, placement and common properties are retained. Height and rotation are local to the text plane.";
         }
         else if (expected is CompositeEntity insert)
         {
@@ -44,7 +50,15 @@ public sealed class CadAnnotationEditor : UserControl
         }
         else throw new NotSupportedException("Select supported text or an attributed block.");
         _status.TextWrapping = TextWrapping.Wrap;
-        body.Children.Add(_value); body.Children.Add(_status);
+        body.Children.Add(_value);
+        if (_height != null && _rotation != null)
+        {
+            var format = new Grid { ColumnSpacing = 12 };
+            format.ColumnDefinitions.Add(new() { Width = new GridLength(1, GridUnitType.Star) });
+            format.ColumnDefinitions.Add(new() { Width = new GridLength(1, GridUnitType.Star) });
+            format.Children.Add(_height); Grid.SetColumn(_rotation, 1); format.Children.Add(_rotation); body.Children.Add(format);
+        }
+        body.Children.Add(_status);
         body.Children.Add(CadTheme.Text("Apply commits one Undo step. Cancel leaves the drawing unchanged.", 11, CadTheme.Muted));
         Content = body;
     }
@@ -67,7 +81,12 @@ public sealed class CadAnnotationEditor : UserControl
     public void ShowError(string message) => _status.Text = message;
     public void Apply()
     {
-        if (_attributes.IsEmpty) { _session.SetText(_expected, _value.Text); return; }
+        if (_attributes.IsEmpty)
+        {
+            if (!GeometryMath.Number(_height!.Text, out var height) || !GeometryMath.Number(_rotation!.Text, out var rotation))
+                throw new ArgumentException("Enter finite height and rotation values.");
+            _session.SetTextProperties(_expected, _value.Text, height, rotation); return;
+        }
         if (!_session.EditableSelection().Any(e => ReferenceEquals(e, _expected)))
             throw new InvalidOperationException("The block or selection changed. Reopen the editor.");
         StageAttribute();

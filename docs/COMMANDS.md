@@ -67,7 +67,7 @@ See [line-editing details and boundaries](LINE-EDITING.md). Modification errors 
 | PERSPECTIVE | PERSPECTIVE | 1 perspective, 0 orthographic. |
 | CLIP3D | CLIP3D | x,y,z,nx,ny,nz or OFF; retains normal·(point-origin) <= 0, uncapped display only. |
 
-The complete registry has **82 commands**. EXPLODE handles analytic bulged-polyline segments as arcs. SelectAll is limited to visible entities of the active layout. Mesh tools do not imply ACIS/B-rep or every AutoCAD option.
+The complete registry has **83 commands**. EXPLODE handles analytic bulged-polyline segments as arcs. SelectAll is limited to visible entities of the active layout. Mesh tools do not imply ACIS/B-rep or every AutoCAD option.
 
 Tab accepts completion in an idle command box; F2 expands history, F12 toggles dynamic input, and Ctrl+1 toggles Properties. Snap options expose per-mode choices including line intersections/perpendiculars and circle/arc tangents. Browser shortcuts may take precedence.
 
@@ -130,3 +130,5 @@ Hold Ctrl to keep a dragged palette floating near an edge. Escape cancels palett
 ## Additional editing workflows
 
 `POLYGON` (`POL`): 3–1024 sides, center, Inscribed/Circumscribed, radius. `DONUT` (`DO`): inside/outside diameters followed by repeated center points; Enter finishes. `MATCHPROP` (`MA`): preselect destinations, then pick a source. `PEDIT Join` uses the same analytic JOIN implementation; `PEDIT Edit` opens the indexed vertex editor. `DDEDIT` (`ED`) edits one selected/picked text or supported attributed block; `EATTEDIT` (`ATE`) opens attribute values. Apply is one undo step; Cancel preserves the drawing. See [editing documentation](EDITING.md) for input contracts, source-retention rules and non-parity boundaries.
+
+`MTEXT` (`MT`) creates multiline text at an insertion point; `\P` inserts a paragraph. DDEDIT also stages local height/rotation edits. See [multiline text](MTEXT.md).

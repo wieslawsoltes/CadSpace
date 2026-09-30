@@ -65,7 +65,7 @@ public sealed class SkiaDraftRenderer : IDisposable
             canvas.Save();
             var textMatrix = new SKMatrix((float)label.AxisX.X, (float)-label.AxisY.X, point.X, (float)-label.AxisX.Y, (float)label.AxisY.Y, point.Y, 0, 0, 1);
             canvas.Concat(in textMatrix);
-            var lines = label.Text.Split('\n');
+            var lines = SceneTextLayout.For(label).Lines;
             for (var i = 0; i < lines.Length; i++) canvas.DrawText(lines[i], 0, (float)(i * height * 1.3), _font, _fill);
             canvas.Restore();
         }

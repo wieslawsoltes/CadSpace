@@ -100,7 +100,21 @@ public sealed class CadPalette : UserControl
             case LineEntity line: Field("Start", line.Start.ToString(), s => Update(entity, e => ((LineEntity)e) with { Start = Point(s) })); Field("End", line.End.ToString(), s => Update(entity, e => ((LineEntity)e) with { End = Point(s) })); Field("Length", line.Start.DistanceTo(line.End).ToString("0.###")); break;
             case CircleEntity circle: Field("Center", circle.Center.ToString(), s => Update(entity, e => ((CircleEntity)e) with { Center = Point(s) })); Field("Radius", circle.Radius.ToString(CultureInfo.InvariantCulture), s => Update(entity, e => ((CircleEntity)e) with { Radius = Number(s) })); Field("Area", (Math.PI * circle.Radius * circle.Radius).ToString("0.###")); break;
             case ArcEntity arc: Field("Center", arc.Center.ToString(), s => Update(entity, e => ((ArcEntity)e) with { Center = Point(s) })); Field("Radius", arc.Radius.ToString(CultureInfo.InvariantCulture), s => Update(entity, e => ((ArcEntity)e) with { Radius = Number(s) })); Field("Start angle", arc.StartAngle.ToString(CultureInfo.InvariantCulture), s => Update(entity, e => ((ArcEntity)e) with { StartAngle = Number(s) })); Field("End angle", arc.EndAngle.ToString(CultureInfo.InvariantCulture), s => Update(entity, e => ((ArcEntity)e) with { EndAngle = Number(s) })); break;
-            case TextEntity text: Field("Position", text.Position.ToString(), s => Update(entity, e => ((TextEntity)e) with { Position = Point(s) })); Field("Text", text.Text, s => Update(entity, e => ((TextEntity)e) with { Text = s })); Field("Height", text.Height.ToString(CultureInfo.InvariantCulture), s => Update(entity, e => ((TextEntity)e) with { Height = Number(s) })); Field("Rotation", text.Rotation.ToString(CultureInfo.InvariantCulture), s => Update(entity, e => ((TextEntity)e) with { Rotation = Number(s) })); break;
+            case TextEntity text:
+                Field("Position", text.Position.ToString(), s => Update(entity, e => ((TextEntity)e) with { Position = Point(s) }));
+                if (text.Multiline)
+                {
+                    // The inline single-line TextBox truncates multiline values on assignment and can
+                    // commit the truncation on LostFocus. Use the staged editor for MTEXT content.
+                    var content = SceneTextLayout.NormalizeLineEndings(text.Text).Replace("\n", "\\P");
+                    var length = Math.Min(160, content.Length);
+                    if (length < content.Length && char.IsHighSurrogate(content[length - 1])) length--;
+                    Field("Text", length < content.Length ? content[..length] + "…" : content);
+                }
+                else Field("Text", text.Text, s => session.SetText(entity, s));
+                Field("Height", text.Height.ToString(CultureInfo.InvariantCulture), s => Update(entity, e => ((TextEntity)e) with { Height = Number(s) }));
+                Field("Rotation", text.Rotation.ToString(CultureInfo.InvariantCulture), s => Update(entity, e => ((TextEntity)e) with { Rotation = Number(s) }));
+                break;
             case PolylineEntity poly:
                 Field("Vertices", poly.Vertices.Length.ToString());
                 Field("Closed", poly.Closed ? "Yes" : "No");

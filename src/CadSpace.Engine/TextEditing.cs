@@ -22,16 +22,39 @@ public static class TextEditing
         ArgumentNullException.ThrowIfNull(value);
         if (value.Length > MaximumCharacters || value.Contains('\0') || !multiline && value.IndexOfAny(['\r', '\n']) >= 0)
             throw new ArgumentException("Text must fit 32,768 characters, contain no NUL, and use one line for TEXT.");
+        for (var i = 0; i < value.Length; i++)
+        {
+            if (char.IsHighSurrogate(value[i]))
+            {
+                if (++i >= value.Length || !char.IsLowSurrogate(value[i])) throw new ArgumentException("Text has an unpaired surrogate.");
+            }
+            else if (char.IsLowSurrogate(value[i])) throw new ArgumentException("Text has an unpaired surrogate.");
+        }
     }
     public static void SetText(this CadSession session, Entity expected, string value)
     {
         var text = TextOf(expected) ?? throw new NotSupportedException("Select an editable TEXT or MTEXT object.");
+        SetTextProperties(session, expected, value, text.Height, text.Rotation);
+    }
+    /// <summary>Edit content, local height and local rotation together without changing the insertion or placement.</summary>
+    public static void SetTextProperties(this CadSession session, Entity expected, string value, double height, double rotation)
+    {
+        var text = TextOf(expected) ?? throw new NotSupportedException("Select an editable TEXT or MTEXT object.");
         ValidateValue(value, text.Multiline);
+        if (!double.IsFinite(height) || height <= 0 || height > 1e12 || !double.IsFinite(rotation))
+            throw new ArgumentException("Height must be positive and at most 1e12; rotation must be finite.");
         if (!session.EditableSelection().Any(e => ReferenceEquals(e, expected)))
             throw new InvalidOperationException("The object or selection changed. Reopen the text editor.");
-        if (text.Text == value) return;
+        if (text.Multiline)
+        {
+            value = SceneTextLayout.NormalizeLineEndings(value);
+            // A native text control may normalize line endings even when no content was edited.
+            // Preserve source bytes and redo history for that no-op (also on format-only changes).
+            if (value == SceneTextLayout.NormalizeLineEndings(text.Text)) value = text.Text;
+        }
+        if (text.Text == value && text.Height == height && text.Rotation == rotation) return;
         Entity Replace(Entity e) => e switch {
-            TextEntity t => t with { Text = value },
+            TextEntity t => t with { Text = value, Height = height, Rotation = rotation },
             PlacedEntity p => p with { Geometry = Replace(p.Geometry) },
             _ => throw new NotSupportedException("The selected object is not text.")
         };

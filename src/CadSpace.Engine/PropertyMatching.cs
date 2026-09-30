@@ -22,14 +22,16 @@ public static class PropertyMatching
         {
             if (!byId.TryGetValue(id, out var target) || target.Layout != session.ActiveLayout || target is OpaqueEntity) throw new ArgumentException("A destination is missing, unsupported or outside the active layout.");
             if (drawing.LayerFor(target).Locked) throw new InvalidOperationException("A destination layer is locked.");
-            replacements.Add(id, target with {
+            var replacement = target with {
                 Layer = fields.HasFlag(PropertyMatchFields.Layer) ? source.Layer : target.Layer,
                 ColorIndex = fields.HasFlag(PropertyMatchFields.Color) ? source.ColorIndex : target.ColorIndex,
                 TrueColor = fields.HasFlag(PropertyMatchFields.Color) ? source.TrueColor : target.TrueColor,
                 Linetype = fields.HasFlag(PropertyMatchFields.Linetype) ? source.Linetype : target.Linetype,
                 LinetypeScale = fields.HasFlag(PropertyMatchFields.LinetypeScale) ? source.LinetypeScale : target.LinetypeScale,
-                LineWeight = fields.HasFlag(PropertyMatchFields.LineWeight) ? source.LineWeight : target.LineWeight });
+                LineWeight = fields.HasFlag(PropertyMatchFields.LineWeight) ? source.LineWeight : target.LineWeight };
+            if (replacement != target) replacements.Add(id, replacement);
         }
+        if (replacements.Count == 0) return;
         session.Document.Edit("Match properties", d => d with { Entities = d.Entities.Select(e => replacements.GetValueOrDefault(e.Id) ?? e).ToImmutableArray() });
     }
 }

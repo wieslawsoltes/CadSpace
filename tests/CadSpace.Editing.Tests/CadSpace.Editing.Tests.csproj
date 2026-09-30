@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="../../src/CadSpace.Engine/CadSpace.Engine.csproj" />
     <ProjectReference Include="../../src/CadSpace.Dxf/CadSpace.Dxf.csproj" />
+    <None Include="../fixtures/independent-mtext.dxf" CopyToOutputDirectory="PreserveNewest" Link="fixtures/independent-mtext.dxf" />
     <None Include="../fixtures/independent-editing.dxf" CopyToOutputDirectory="PreserveNewest" Link="fixtures/independent-editing.dxf" />
   </ItemGroup>
 </Project>

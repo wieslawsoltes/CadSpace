@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Windows.Storage;
 using Windows.Storage.Pickers;
+using Windows.Storage.Provider;
 using Windows.Storage.Streams;
 
 namespace CadSpace.App;
@@ -99,7 +100,10 @@ public sealed partial class App : Application
         var picker = new FileSavePicker { SuggestedStartLocation = PickerLocationId.DocumentsLibrary, SuggestedFileName = Path.GetFileNameWithoutExtension(document.DisplayName) };
         picker.FileTypeChoices.Add("CadSpace project", new List<string> { ".cadspace" });
         var file = await picker.PickSaveFileAsync(); if (file == null) return;
-        var text = CadProjectCodec.Write(drawing, document.Source); await FileIO.WriteTextAsync(file, text);
+        var text = CadProjectCodec.Write(drawing, document.Source);
+        CachedFileManager.DeferUpdates(file);
+        await FileIO.WriteTextAsync(file, text);
+        await CompleteFileUpdate(file);
         document.DisplayName = file.Name;
         if (document.Session.Document.Drawing == drawing) { document.Session.Document.MarkSaved(); await ForgetRecovery(document); }
         RefreshTabs(); _workspace!.CommandLine.AddMessage($"Saved {file.Name}. Editable geometry, layers, blocks, and DXF provenance retained.");
@@ -111,13 +115,24 @@ public sealed partial class App : Application
         if (!result.Warnings.IsEmpty)
         {
             var dialog = new ContentDialog { XamlRoot = _workspace!.XamlRoot, Title = "Review DXF export", Content = new ScrollViewer { MaxHeight = 360, Content = new TextBlock { Text = string.Join("\n\n", result.Warnings) + "\n\nExport a copy and keep your original file. Use Save for a lossless native project.", TextWrapping = TextWrapping.Wrap } }, PrimaryButtonText = "Export copy", CloseButtonText = "Cancel", DefaultButton = ContentDialogButton.Close };
+            CadUi.DescribeDialog(dialog, "export.dialog");
             if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
         }
         var picker = new FileSavePicker { SuggestedStartLocation = PickerLocationId.DocumentsLibrary, SuggestedFileName = Path.GetFileNameWithoutExtension(document.DisplayName) + (result.Warnings.IsEmpty ? "" : "-export") };
         picker.FileTypeChoices.Add(binary ? "Binary DXF drawing" : "ASCII DXF drawing", new List<string> { ".dxf" });
         var file = await picker.PickSaveFileAsync(); if (file == null) return;
+        CachedFileManager.DeferUpdates(file);
         await FileIO.WriteBytesAsync(file, result.Bytes);
+        await CompleteFileUpdate(file);
         _workspace!.CommandLine.AddMessage($"Exported {file.Name}." + (result.Warnings.IsEmpty ? "" : " Use Save to retain native editing semantics."));
+    }
+    private static async Task CompleteFileUpdate(StorageFile file)
+    {
+        // The browser fallback writes a temporary file; completion starts the actual download.
+        // Do not report success or clear native dirty/recovery state before the provider completes.
+        var status = await CachedFileManager.CompleteUpdatesAsync(file);
+        if (status is not (FileUpdateStatus.Complete or FileUpdateStatus.CompleteAndRenamed))
+            throw new IOException($"The file provider did not complete saving {file.Name} ({status}). Save again; the drawing has not been marked as saved.");
     }
     private async Task Close(OpenDrawing document)
     {
@@ -138,7 +153,8 @@ public sealed partial class App : Application
     private async Task Dialog(string title, string message)
     {
         if (_workspace?.XamlRoot == null) return;
-        await new ContentDialog { XamlRoot = _workspace.XamlRoot, Title = title, Content = new ScrollViewer { MaxHeight = 420, Content = new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap } }, CloseButtonText = "Close" }.ShowAsync();
+        var dialog = new ContentDialog { XamlRoot = _workspace.XamlRoot, Title = title, Content = new ScrollViewer { MaxHeight = 420, Content = new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap } }, CloseButtonText = "Close" };
+        CadUi.DescribeDialog(dialog, "file.report"); await dialog.ShowAsync();
     }
     private sealed class OpenDrawing
     {
