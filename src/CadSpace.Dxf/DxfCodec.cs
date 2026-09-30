@@ -68,6 +68,7 @@ public static class DxfCodec
             try
             {
                 entity = DxfEntityReader.Read(DxfRecordEditing.SemanticPairs(record), warnings.Add);
+                if (entity is OpaqueEntity opaqueSource) entity = opaqueSource with { RawRecord = Encode(record) };
                 if (entity is CompositeEntity compoundSource && compoundSource.SourceRecord.Length > 0)
                     entity = compoundSource with { SourceRecord = Encode(record) };
                 // Validate before admitting a typed record; bad geometry is retained opaque.

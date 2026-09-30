@@ -193,6 +193,7 @@ Test("indexed join builds 10,000 unordered segments",()=>{
     var watch=System.Diagnostics.Stopwatch.StartNew();var p=(PolylineEntity)PolylineTools.Join(lines);watch.Stop();Check(p.Vertices.Length==10001);
     Console.WriteLine($"BENCH join 10000 segments: {watch.Elapsed.TotalMilliseconds:0.###} ms; geometry count verified; no timing gate.");
 });
+RecordSafetyRegression.Register(Test);
 var failed=0;
 foreach(var (name,run) in tests)try{run();Console.WriteLine("PASS "+name);}catch(Exception e){failed++;Console.Error.WriteLine($"FAIL {name}: {e}");}
 Console.WriteLine($"{tests.Count-failed}/{tests.Count} drafting/editing regressions passed.");return failed==0?0:1;

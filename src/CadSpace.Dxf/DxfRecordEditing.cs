@@ -55,10 +55,11 @@ internal static class DxfRecordEditing
         if (after.Layout != before.Layout) { common[67] = after.Layout == "Model" ? null : "1"; common[410] = after.Layout == "Model" ? null : after.Layout; }
         var geometry = new Dictionary<int, string?>(); var subclass = "";
         PolylineEntity? newPoly = null, oldPoly = null;
-        var a = after; var b = before;
+        var a = WithoutStyleChanges(after, before); var b = before;
         while (!styleOnly && a is PlacedEntity pa && b is PlacedEntity pb && pa.Placement == pb.Placement)
         {
             // Only the unchanged OCS/affine frame is reusable; arbitrary changed placements need the regular conversion writer.
+            if (pa with { Geometry = pb.Geometry } != pb) return false;
             a = pa.Geometry; b = pb.Geometry;
         }
         void Position(int code, Vec3 value) { geometry[code] = F(value.X); geometry[code + 10] = F(value.Y); geometry[code + 20] = F(value.Z); }
@@ -66,6 +67,17 @@ internal static class DxfRecordEditing
         {
             // Logical compounds cannot be partially regenerated while claiming to preserve attribute or array semantics.
             if (records.Length != 1) return false;
+            // Every change must be accounted for by the selected patch path, including nested common fields.
+            Entity? restored = (a, b) switch {
+                (LineEntity x, LineEntity y) => x with { Start = y.Start, End = y.End },
+                (PointEntity x, PointEntity y) => x with { Position = y.Position },
+                (CircleEntity x, CircleEntity y) => x with { Center = y.Center, Radius = y.Radius },
+                (ArcEntity x, ArcEntity y) => x with { Center = y.Center, Radius = y.Radius, StartAngle = y.StartAngle, EndAngle = y.EndAngle },
+                (TextEntity x, TextEntity y) => x with { Position = y.Position, Text = y.Text, Height = y.Height, Rotation = y.Rotation },
+                (PolylineEntity x, PolylineEntity y) => x with { Vertices = y.Vertices, Closed = y.Closed, ConstantWidth = y.ConstantWidth, ContinuousLinetype = y.ContinuousLinetype },
+                _ => null
+            };
+            if (restored != b) return false;
             switch (a, b)
             {
                 case (LineEntity x, LineEntity y) when kind == "LINE":
@@ -148,7 +160,7 @@ internal static class DxfRecordEditing
                 if (depth < 0 || depth > 32) throw new FormatException("Invalid application data nesting.");
                 output.Add(pair); continue;
             }
-            if (depth == 0 && pair.Code == 1001 && !finished) { Missing(); active = false; }
+            if (depth == 0 && !finished && (pair.Code == 1001 || active && subclass == "AcDbPolyline" && pair.Code == 10)) { Missing(); active = false; }
             if (depth == 0 && pair.Code == 100)
             {
                 if (active && !finished) Missing();
