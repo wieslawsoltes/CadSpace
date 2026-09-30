@@ -7,7 +7,7 @@ namespace CadSpace.Engine;
 public sealed record CommandInfo(string Name, string Alias, string Description, string Category);
 
 /// <summary>Stateful CAD prompts shared by pointer input, command line, and scripts.</summary>
-public sealed class CommandEngine(CadSession session)
+public sealed partial class CommandEngine(CadSession session)
 {
     private readonly List<Vec3> _points = new();
     private string _active = "";
@@ -24,6 +24,11 @@ public sealed class CommandEngine(CadSession session)
     public event Action<string>? ViewRequested;
     public static IReadOnlyList<CommandInfo> Commands { get; } = new CommandInfo[]
     {
+        new("DDEDIT", "ED", "Edit selected or picked text and block attribute values", "Annotate"),
+        new("EATTEDIT", "ATE", "Edit retained attribute values on one block reference", "Blocks"),
+        new("POLYGON", "POL", "Regular inscribed or circumscribed polygon", "Draw"),
+        new("DONUT", "DO", "Native two-arc wide polyline rings or filled discs", "Draw"),
+        new("MATCHPROP", "MA", "Preselect destinations, then pick a source for common properties", "Modify"),
         new("UISTATS", "UISTATS", "Report rendered control bounds and workspace state", "Workspace"),
         new("PROPERTIES", "PR", "Show the Properties palette", "Workspace"),
         new("PROPERTIESCLOSE", "PROPERTIESCLOSE", "Hide the Properties palette", "Workspace"),
@@ -48,7 +53,7 @@ public sealed class CommandEngine(CadSession session)
         new("LAYER", "LA", "Layer Properties Manager", "Manage"), new("LINETYPE", "LT", "Linetype Manager", "Manage"),
         new("LTSCALE", "LTSCALE", "Global drawing linetype scale", "Manage"), new("CELTSCALE", "CELTSCALE", "Linetype scale for new objects", "Manage"), new("CELTYPE", "CELTYPE", "Current linetype; built-in patterns load by name", "Manage"),
         new("MENUBAR", "MENUBAR", "Display classic menu bar: 1 on, 0 off", "Manage"),
-        new("PEDIT", "PE", "Selected polylines: Width, Open, Close or Reverse", "Modify"),
+        new("PEDIT", "PE", "Polylines: Width/Open/Close/Reverse/Join/Edit vertices", "Modify"),
         new("PLINEWID", "PLINEWID", "Default width of new polylines and rectangles", "Draw"),
         new("LINE", "L", "Connected line segments", "Draw"), new("PLINE", "PL", "Polyline; Enter finishes, C closes", "Draw"), new("RECTANG", "REC", "Rectangle from two corners", "Draw"),
         new("CIRCLE", "C", "Center and radius", "Draw"), new("ARC", "A", "Arc through three points", "Draw"), new("POINT", "PO", "Model-space point", "Draw"), new("ELLIPSE", "EL", "Center, major-axis point, minor radius", "Draw"),
@@ -57,7 +62,7 @@ public sealed class CommandEngine(CadSession session)
         new("SCALE", "SC", "Uniform scaling about base point", "Modify"), new("MIRROR", "MI", "Mirror about two-point XY axis", "Modify"), new("OFFSET", "O", "Signed line/arc/circle offset", "Modify"),
         new("ERASE", "E", "Erase selected objects", "Modify"), new("EXPLODE", "X", "Explode blocks or straight polylines", "Modify"), new("ARRAY", "AR", "Rectangular array", "Modify"),
         new("TRIM", "TR", "Select line boundaries, then pick a segment to remove", "Modify"), new("EXTEND", "EX", "Select line boundaries, then pick a line end to extend", "Modify"),
-        new("FILLET", "F", "Round the corner between two selected lines", "Modify"), new("CHAMFER", "CHA", "Equal-distance bevel between two selected lines", "Modify"), new("JOIN", "J", "Join a connected line chain", "Modify"), new("BREAK", "BR", "Remove a portion of one selected line", "Modify"),
+        new("FILLET", "F", "Round the corner between two selected lines", "Modify"), new("CHAMFER", "CHA", "Equal-distance bevel between two selected lines", "Modify"), new("JOIN", "J", "Join a connected coplanar line, arc and open polyline chain", "Modify"), new("BREAK", "BR", "Remove a portion of one selected line", "Modify"),
         new("BLOCK", "B", "Create block from selection", "Blocks"), new("INSERT", "I", "Insert block definition", "Blocks"),
         new("UNION", "UNI", "Boolean union of closed triangle meshes", "Model"), new("SUBTRACT", "SU", "Subtract closed meshes from the first selected mesh in drawing order", "Model"), new("INTERSECT", "IN", "Intersect closed triangle meshes", "Model"),
         new("BOX", "BOX", "Triangle-mesh box", "Model"), new("CYLINDER", "CYL", "Triangle-mesh cylinder", "Model"), new("SPHERE", "SPH", "Triangle-mesh sphere", "Model"), new("CONE", "CONE", "Triangle-mesh cone", "Model"),
@@ -69,13 +74,14 @@ public sealed class CommandEngine(CadSession session)
         new("CLIP3D", "CLIP3D", "Clip at x,y,z,nx,ny,nz; OFF clears the plane", "View"),
         new("HELP", "?", "List supported commands", "Help")
     };
-    public void Cancel() { _active = ""; _points.Clear(); _text = ""; Prompt = "Type a command"; Changed?.Invoke(); }
+    public void Cancel() { _matchDrawing = null; _matchDestinations = []; _active = ""; _points.Clear(); _text = ""; Prompt = "Type a command"; Changed?.Invoke(); }
     public void Start(string command) { Cancel(); Submit(command); }
     public void Submit(string input)
     {
         input = input.Trim();
         try
         {
+            if (TrySubmitAnnotation(input) || TrySubmitDrafting(input)) return;
             if (!IsActive)
             {
                 if (input.Length == 0) return;
@@ -93,7 +99,7 @@ public sealed class CommandEngine(CadSession session)
                     case "REDO": Session.Document.Redo(); Cancel(); return;
                     case "ERASE": Session.Erase(); Cancel(); return;
                     case "EXPLODE": Session.Explode(); Cancel(); return;
-                    case "JOIN": Session.JoinLines(); Cancel(); return;
+                    case "JOIN": Session.JoinCurves(); Cancel(); return;
                     case "SELECTALL": Session.SelectAll(); Cancel(); return;
                     case "SELECTSIMILAR": Session.SelectSimilar(); Cancel(); return;
                     case "HELP": Message?.Invoke(string.Join("  ·  ", Commands.Select(c => $"{c.Name} ({c.Alias})"))); Cancel(); return;
@@ -164,11 +170,13 @@ public sealed class CommandEngine(CadSession session)
             {
                 switch (input.ToUpperInvariant())
                 {
+                    case "J": case "JOIN": Session.JoinCurves(); break;
+                    case "E": case "EDIT": ViewRequested?.Invoke("POLYLINEEDITOR"); break;
                     case "W": case "WIDTH": _text = "WIDTH"; UpdatePrompt(); return;
                     case "O": case "OPEN": Session.SetClosed(false); break;
                     case "C": case "CLOSE": Session.SetClosed(true); break;
                     case "R": case "REVERSE": Session.Reverse(); break;
-                    default: throw new ArgumentException("Use Width, Open, Close or Reverse.");
+                    default: throw new ArgumentException("Use Width, Open, Close, Reverse, Join or Edit.");
                 }
                 Cancel(); return;
             }
@@ -186,6 +194,7 @@ public sealed class CommandEngine(CadSession session)
         if (!IsActive || !point.IsFinite) return;
         try
         {
+            if (TryAnnotationPoint(point) || TryDraftPoint(point)) return;
             if (RequiresNumber || _active is "ARRAY" or "QSELECT" || (_active is "BLOCK" or "INSERT" && _text.Length == 0)) { Message?.Invoke(Prompt); return; }
             if (_active == "TEXT" && _points.Count == 1) { Message?.Invoke("Enter the text in the command line."); return; }
             if (_active is "TRIM" or "EXTEND") { Session.TrimOrExtend(point, PickTolerance, _active == "EXTEND"); Cancel(); return; }
@@ -281,7 +290,7 @@ public sealed class CommandEngine(CadSession session)
         Prompt = _active switch
         {
             "MENUBAR" => "Enter 1 to show the classic menu bar or 0 to hide it",
-            "PEDIT" => _text == "WIDTH" ? "Specify uniform polyline width (0 for a centerline)" : "Enter Width / Open / Close / Reverse",
+            "PEDIT" => _text == "WIDTH" ? "Specify uniform polyline width (0 for a centerline)" : "Enter Width / Open / Close / Reverse / Join / Edit",
             "PLINEWID" => "Specify default polyline width (drawing units)",
             "LTSCALE" => "Specify global linetype scale",
             "CELTSCALE" => "Specify linetype scale for new objects",
@@ -319,6 +328,7 @@ public sealed class CommandEngine(CadSession session)
     }
     public IReadOnlyList<Entity> Preview(Vec3 cursor)
     {
+        if (DraftPreview(cursor) is { } drafting) return drafting;
         if (_points.Count == 0 || RequiresNumber) return [];
         var a = _points[0];
         return _active switch

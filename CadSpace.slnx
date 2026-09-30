@@ -9,6 +9,7 @@
     <Project Path="src/CadSpace.App/CadSpace.App.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/CadSpace.Editing.Tests/CadSpace.Editing.Tests.csproj" />
     <Project Path="tests/CadSpace.Tests/CadSpace.Tests.csproj" />
     <Project Path="tests/CadSpace.Exchange.Tests/CadSpace.Exchange.Tests.csproj" />
     <Project Path="tests/CadSpace.Persistence.Tests/CadSpace.Persistence.Tests.csproj" />

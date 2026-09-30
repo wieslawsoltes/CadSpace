@@ -158,9 +158,10 @@ internal static class DxfDocumentWriter
             blocks.Append(Encode(Owner(end, id)));
         }
         var entities = string.Concat(drawing.Entities.Where(e => e.Layout.Equals("Model", StringComparison.OrdinalIgnoreCase)).Select(e => Owned(emit(e), blockIds[layouts["Model"]])));
-        var headerPairs = new List<DxfPair>(); var skip = false;
+        // Keep the version marker first: binary readers may determine code width from a bounded header prefix.
+        var headerPairs = new List<DxfPair>(Record(9, "$ACADVER", 1, "AC1027")); var skip = false;
         foreach (var pair in Section("HEADER")) { if (pair.Code == 9) skip = pair.Value is "$ACADVER" or "$HANDSEED" or "$INSUNITS" or "$LTSCALE"; if (!skip) headerPairs.Add(pair); }
-        headerPairs.AddRange(Record(9, "$ACADVER", 1, "AC1027", 9, "$INSUNITS", 70, drawing.Units, 9, "$LTSCALE", 40, drawing.LinetypeScale, 9, "$HANDSEED", 5, next()));
+        headerPairs.AddRange(Record(9, "$INSUNITS", 70, drawing.Units, 9, "$LTSCALE", 40, drawing.LinetypeScale, 9, "$HANDSEED", 5, next()));
         var output = new StringBuilder();
         void Append(string name, string content) => output.Append("0\nSECTION\n2\n").Append(name).Append('\n').Append(content).Append("0\nENDSEC\n");
         Append("HEADER", Encode(headerPairs)); if (!Section("CLASSES").IsEmpty) Append("CLASSES", Encode(Section("CLASSES")));

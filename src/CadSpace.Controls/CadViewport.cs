@@ -58,7 +58,17 @@ public sealed partial class CadViewport : Grid
         PointerEntered += (_, _) => { _inside = true; Redraw(); };
         PointerExited += (_, _) => { _inside = false; Redraw(); };
         PointerCaptureLost += (_, _) => { _pan = _orbit = _selecting = false; _gripEntity = null; Redraw(); };
-        DoubleTapped += (_, e) => { if (_commands?.IsActive != true) { Fit(); e.Handled = true; } };
+        DoubleTapped += (_, e) => {
+            if (_commands?.IsActive == true || IsChrome(e.OriginalSource)) return;
+            if (!Is3D && _session != null && _commands != null)
+            {
+                var hit = _session.HitTest(World(e.GetPosition(this)), 7 / Camera.PixelsPerUnit);
+                var entity = hit is Guid id ? _session.Document.Drawing.Entities.FirstOrDefault(x => x.Id == id) : null;
+                if (entity != null && TextEditing.IsEditable(entity))
+                { CancelInteraction(); _session.Select(entity.Id); _commands.Start("DDEDIT"); e.Handled = true; return; }
+            }
+            Fit(); e.Handled = true;
+        };
         SizeChanged += (_, _) => { Camera.Width = ActualWidth; Camera.Height = ActualHeight; Redraw(); };
     }
     public void Bind(CadSession session, CommandEngine commands)

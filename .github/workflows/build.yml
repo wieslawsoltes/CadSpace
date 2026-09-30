@@ -21,6 +21,7 @@ jobs:
         run: |
           python -m pip install ezdxf==1.4.4
           python tests/fixtures/generate.py
+          python tests/fixtures/editing.py
       - name: Geometry and document regression tests
         run: dotnet run --project tests/CadSpace.Tests -c Release
       - name: DXF and editing regression tests
@@ -43,6 +44,12 @@ jobs:
           python tests/fixtures/audit.py
           python tests/fixtures/audit_widths.py
           python tests/fixtures/audit_styles.py artifacts/styles-audit
+      - name: Source-preserving DXF and analytic editing regressions
+        env:
+          CADSPACE_EDITING_OUTPUT: artifacts/editing-audit
+        run: |
+          dotnet run --project tests/CadSpace.Editing.Tests -c Release
+          python tests/fixtures/editing.py artifacts/editing-audit
       - name: Pack reusable libraries
         run: |
           for project in Geometry Model Dxf Engine Rendering; do
@@ -51,7 +58,7 @@ jobs:
       - name: Source archive with generated test fixtures
         run: |
           git archive --format=zip HEAD -o artifacts/CadSpace-source.zip
-          zip -u artifacts/CadSpace-source.zip tests/fixtures/independent.zip
+          zip -u artifacts/CadSpace-source.zip tests/fixtures/independent.zip tests/fixtures/independent-editing.dxf
       - uses: actions/upload-artifact@v4
         with:
           name: cadspace-libraries-and-source
@@ -125,7 +132,7 @@ jobs:
           ln -s "$PWD/artifacts/site" artifacts/server/CadSpace
           python -m http.server 8177 --bind 127.0.0.1 --directory artifacts/server > artifacts/server.log 2>&1 &
           result=0
-          for test in recovery_storage smoke styles widths workspace workspace_polish typography; do
+          for test in recovery_storage smoke styles widths workspace workspace_polish typography editing annotations; do
             python "tests/browser/$test.py" || result=1
           done
           exit "$result"
