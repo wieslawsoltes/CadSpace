@@ -34,9 +34,13 @@ Workspace preferences are stored separately from drawings: browser localStorage 
 
 Read the [workspace guide](docs/WORKSPACE.md) for individual control APIs, integration examples and exact boundaries. Floating palettes stay inside the app; detached native windows, arbitrary split/tab docking, CUI editing and every AutoCAD dialog remain outside the implemented scope.
 
+## Analytic editing and retained DXF data
+
+`JOIN` / `PEDIT Join` now retain analytic arcs and tapered widths. The bounded PEDIT vertex editor can move, split, delete or straighten supported segments. `POLYGON`, `DONUT`, `MATCHPROP`, `DDEDIT` and `EATTEDIT` connect to the command line, ribbon, menus and Properties. Supported source-backed edits preserve native entity/attribute records, application data and XDATA instead of flattening every modified object. Unsupported changes retain explicit conversion warnings. See [editing workflows and exact boundaries](docs/EDITING.md).
+
 ## Drafting, modeling and interchange
 
-The engine exposes **77 command workflows**, including UI commands. Names do not imply every AutoCAD option. See the [command reference](docs/COMMANDS.md).
+The engine exposes **82 command workflows**, including UI commands. Names do not imply every AutoCAD option. See the [command reference](docs/COMMANDS.md).
 
 | Area | Implemented scope |
 | --- | --- |
@@ -138,7 +142,7 @@ dotnet add package CadSpace.Geometry
 | [CadSpace.Rendering](https://www.nuget.org/packages/CadSpace.Rendering) | [![NuGet](https://img.shields.io/nuget/vpre/CadSpace.Rendering.svg)](https://www.nuget.org/packages/CadSpace.Rendering) | [![Downloads](https://img.shields.io/nuget/dt/CadSpace.Rendering.svg)](https://www.nuget.org/packages/CadSpace.Rendering) | Cameras, SkiaSharp 2D drafting and OpenGL geometry, text, pattern and selection passes. |
 | [CadSpace.Controls](https://www.nuget.org/packages/CadSpace.Controls) | [![NuGet](https://img.shields.io/nuget/vpre/CadSpace.Controls.svg)](https://www.nuget.org/packages/CadSpace.Controls) | [![Downloads](https://img.shields.io/nuget/dt/CadSpace.Controls.svg)](https://www.nuget.org/packages/CadSpace.Controls) | Uno workspace: viewport, ribbon, palettes, managers, command line and navigation. |
 
-Dependencies follow the project references: `Model` → `Geometry`; `Engine`, `Dxf` and `Rendering` → `Model` (`Rendering` adds SkiaSharp and Silk.NET.OpenGL); `Controls` → `Engine` + `Rendering`.
+Dependencies follow the project references: `Model` → `Geometry`; `Engine`, `Dxf` and `Rendering` → `Model` (`Rendering` adds SkiaSharp and Silk.NET.OpenGL); `Controls` → `Engine` + `Dxf` + `Rendering`.
 
 ### CadSpace.Geometry
 
@@ -326,7 +330,7 @@ File.WriteAllBytes("plan.png", png.ToArray());
 
 ### CadSpace.Controls
 
-The Uno Platform CAD workspace: `CadWorkspace` assembles the application bar, ribbon, classic menus, document/layout tabs, retained Skia/OpenGL `CadViewport` with ViewCube and navigation bar, dockable palettes, Properties and Layer/Linetype managers, command line with dynamic input and the status bar. Each component can also be hosted on its own. Depends on `CadSpace.Engine` and `CadSpace.Rendering`; requires Uno Platform (Skia renderer; 3D needs OpenGL/GLES/WebGL).
+The Uno Platform CAD workspace: `CadWorkspace` assembles the application bar, ribbon, classic menus, document/layout tabs, retained Skia/OpenGL `CadViewport` with ViewCube and navigation bar, dockable palettes, Properties and Layer/Linetype managers, command line with dynamic input and the status bar. Each component can also be hosted on its own. Depends on `CadSpace.Engine`, `CadSpace.Dxf` and `CadSpace.Rendering`; requires Uno Platform (Skia renderer; 3D needs OpenGL/GLES/WebGL).
 
 ```bash
 dotnet add package CadSpace.Controls
@@ -371,15 +375,17 @@ The reproducible suites compare 100,000-line indexed queries with linear impleme
 # Independent test-only fixture generator; not an application dependency.
 python -m pip install ezdxf==1.4.4
 python tests/fixtures/generate.py
+python tests/fixtures/editing.py
 
 dotnet run --project tests/CadSpace.Tests -c Release
 dotnet run --project tests/CadSpace.Exchange.Tests -c Release
 dotnet run --project tests/CadSpace.Persistence.Tests -c Release
 dotnet run --project tests/CadSpace.Advanced.Tests -c Release
 dotnet run --project tests/CadSpace.Performance.Tests -c Release
+dotnet run --project tests/CadSpace.Editing.Tests -c Release
 ```
 
-The five suites contain **334 headless regressions**. CI independently audits tested ASCII/binary geometry, styles and widths with zero errors/repairs required; builds Windows/macOS/Linux; packages all libraries; publishes trimmed WebAssembly; and runs real rendered-browser interaction checks. Screenshots, console logs and native checkpoints are retained as artifacts. Current-main builds deploy to GitHub Pages and verify the served commit. Release runs for `v*` tags or a supplied manual version: it repeats the release tests, publishes self-contained single-file desktop executables for Windows, macOS and Linux (x64 and arm64), packs all six libraries with symbols, archives browser/source distributions and emits `SHA256SUMS.txt`. Tags attach the assets to a GitHub Release and publish the packages to NuGet.org with [Trusted Publishing](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing) (OIDC, no stored API key) from the protected `nuget` environment; manual runs are dry runs that only upload workflow artifacts. Signing and notarization are not automatic.
+The original five suites contain **334 headless regressions**; `tests/CadSpace.Editing.Tests` adds **67 editing and record-safety checks**, for **401 total**. CI independently audits tested ASCII/binary geometry, styles and widths with zero errors/repairs required; builds Windows/macOS/Linux; packages all libraries; publishes trimmed WebAssembly; and runs real rendered-browser interaction checks. Screenshots, console logs and native checkpoints are retained as artifacts. Current-main builds deploy to GitHub Pages and verify the served commit. Release runs for `v*` tags or a supplied manual version: it repeats the release tests, publishes self-contained single-file desktop executables for Windows, macOS and Linux (x64 and arm64), packs all six libraries with symbols, archives browser/source distributions and emits `SHA256SUMS.txt`. Tags attach the assets to a GitHub Release and publish the packages to NuGet.org with [Trusted Publishing](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing) (OIDC, no stored API key) from the protected `nuget` environment; manual runs are dry runs that only upload workflow artifacts. Signing and notarization are not automatic.
 
 Software-backed Chromium is not physical-GPU, accessibility or Autodesk interoperability qualification. Uno's host still uses framebuffer readback through a pinned RGBA adapter, **not zero-copy WebGPU/Vulkan**. Analytic solids, full typography/dynamic blocks/constraints, paper-space viewports/plotting and complete UI/API parity remain substantial work. Read the [coverage matrix](docs/FEATURES.md).
 

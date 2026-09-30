@@ -1,5 +1,13 @@
 # Changelog
 
+## Analytic drafting, DXF retention and annotations (unreleased)
+
+- Added analytic line/arc/open-polyline JOIN, reversible taper preservation and indexed endpoint matching; extended PEDIT with reusable vertex editing, splitting and explicit straight reconnection.
+- Added POLYGON, DONUT, MATCHPROP, DDEDIT and EATTEDIT with shared commands, ribbon/menu/Properties integration, staged text/attribute editing and 2D double-click entry.
+- Preserve supported source-record geometry/property edits, APPDATA/XDATA and unambiguous vertex identifiers; edited native attributes retain INSERT/ATTRIB/SEQEND rather than flattening.
+- Fixed binary version-header ordering, opaque payload retention and stale nested-field reuse. Added newer-generation browser checkpoint assertions.
+- Added a sixth headless suite (67 checks, 401 total), six additional independent export audits (12 total) and browser editing/annotation scripts. Full contracts and remaining limits are in docs/EDITING.md.
+
 ## Integrated CAD workspace (unreleased)
 
 - Added reusable application menu, Quick Access, search, ribbon panels/split buttons/selectors, document/layout tabs and workspace options.

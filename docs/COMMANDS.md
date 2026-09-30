@@ -24,7 +24,7 @@ Enter one command or prompted value at a time. Coordinates use invariant decimal
 | EXTEND | EX | Selected line boundaries; point near the unselected line end to extend. |
 | FILLET | F | Exactly two selected coplanar XY lines; radius. |
 | CHAMFER | CHA | Exactly two selected coplanar XY lines; equal distance. |
-| JOIN | J | Selected connected line chain; creates a polyline. |
+| JOIN | J | Selected connected lines/arcs/open polylines in a shared plane; analytic bulges and widths retained. |
 | BREAK | BR | One selected line; two projected break points. |
 | ERASE | E | Deletes selected editable objects. Locked/opaque objects prevent the transaction. |
 | EXPLODE | X | Selected supported blocks or polylines, including bulged segments. |
@@ -41,7 +41,7 @@ Enter one command or prompted value at a time. Coordinates use invariant decimal
 | AREA | AA | Reports area of selected closed polylines using their tessellated boundary. |
 | UNDO | U | Undo the most recent document transaction. |
 | REDO | REDO | Redo the most recently undone transaction. |
-| SELECTALL | ALL | Select visible entities in the active layout. |
+| SELECTALL | ALL | Select visible entities of the active layout. |
 | ZOOM | Z | Zoom extents; no additional ZOOM command options yet. |
 | TOP | TOP | Switch to the top drafting viewport. |
 | 3DORBIT | 3DO | Switch to the 3D viewport; click selects, drag orbits. |
@@ -67,7 +67,7 @@ See [line-editing details and boundaries](LINE-EDITING.md). Modification errors 
 | PERSPECTIVE | PERSPECTIVE | 1 perspective, 0 orthographic. |
 | CLIP3D | CLIP3D | x,y,z,nx,ny,nz or OFF; retains normal·(point-origin) <= 0, uncapped display only. |
 
-The complete registry has **77 commands**. EXPLODE handles analytic bulged-polyline segments as arcs. SelectAll is limited to visible entities of the active layout. Mesh tools do not imply ACIS/B-rep or every AutoCAD option.
+The complete registry has **82 commands**. EXPLODE handles analytic bulged-polyline segments as arcs. SelectAll is limited to visible entities of the active layout. Mesh tools do not imply ACIS/B-rep or every AutoCAD option.
 
 Tab accepts completion in an idle command box; F2 expands history, F12 toggles dynamic input, and Ctrl+1 toggles Properties. Snap options expose per-mode choices including line intersections/perpendiculars and circle/arc tangents. Browser shortcuts may take precedence.
 
@@ -125,3 +125,8 @@ PROPERTIES / PROPERTIESCLOSE show/hide Properties; TOOLPALETTES (TP) / TOOLPALET
 `MENUBAR` accepts `1` to display the classic menu bar and `0` to hide it; it does not edit the drawing or create an undo state. `OPTIONS` (`OP`) opens staged Display, Workspace and Status Bar tabs. Apply validates settings, Cancel discards them, and Reset restores the default workspace. Hiding a status control does not disable its drafting mode. Display-only options preserve the camera and model-view mode.
 
 Hold Ctrl to keep a dragged palette floating near an edge. Escape cancels palette movement, palette resizing or command-window resizing. Command height, navigation visibility and status customization are persisted with other UI-only workspace preferences. See [Workspace controls](WORKSPACE.md) for supported controls, reuse and remaining boundaries.
+
+
+## Additional editing workflows
+
+`POLYGON` (`POL`): 3–1024 sides, center, Inscribed/Circumscribed, radius. `DONUT` (`DO`): inside/outside diameters followed by repeated center points; Enter finishes. `MATCHPROP` (`MA`): preselect destinations, then pick a source. `PEDIT Join` uses the same analytic JOIN implementation; `PEDIT Edit` opens the indexed vertex editor. `DDEDIT` (`ED`) edits one selected/picked text or supported attributed block; `EATTEDIT` (`ATE`) opens attribute values. Apply is one undo step; Cancel preserves the drawing. See [editing documentation](EDITING.md) for input contracts, source-retention rules and non-parity boundaries.

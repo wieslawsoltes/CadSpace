@@ -57,3 +57,22 @@ The executable editing suite covers analytic joins, width reversal, curve splitt
 - Autodesk LWPOLYLINE group codes: https://help.autodesk.com/cloudhelp/2015/ENU/AutoCAD-DXF/files/GUID-748FC305-F3F2-4F74-825A-61F04D757A50.htm
 - Autodesk binary DXF encoding: https://help.autodesk.com/cloudhelp/2023/ENU/AutoCAD-DXF/files/GUID-FC1C3C69-DBC2-49E4-893A-000D6538C0FE.htm
 - Autodesk application-defined groups: https://help.autodesk.com/cloudhelp/2024/ENU/AutoCAD-DXF/files/GUID-6939D69E-04CB-4F4C-87B2-67BC540FCF58.htm
+
+
+## Direct text and block-attribute editing
+
+`DDEDIT` (`ED`, with `TEXTEDIT` accepted as a spelling) opens the staged content editor for one preselected TEXT/MTEXT root or supported attributed block. With no selection, pick the object. `EATTEDIT` (`ATE`) selects the block-attribute workflow. The Annotate/Insert ribbons, classic Modify menu, Properties action and 2D double-click use the same editor. Double-clicking unrelated geometry retains Zoom Extents. The editor commits on Apply as one Undo transaction; Cancel does not change the drawing.
+
+Text editing preserves position, height, rotation, OCS/affine placement, identifiers and common properties. MTEXT is a **raw content editor**, not complete rich-text formatting. Values are bounded to 32,768 characters; single-line TEXT cannot contain line breaks. Stale selection/object captures and locked layers reject an edit.
+
+`CadAnnotationEditor` is reusable in the Controls library. `TextEditing.SetText` lives in Engine; `DxfAttributeEditing.Read` and `Apply` live in Dxf. Controls references the Dxf library for its source-backed attribute adapter; Engine remains independent of file formats. The Dxf `Apply` method returns a validated immutable drawing, which a host wraps in `CadDocument.Edit`.
+
+The attribute editor shows indexed tags/values without creating a TextBox for every attribute. It can change supported single-line values, including invisible attributes in a retained compound. Tags, constant/invisible flags, positions, widths/oblique angles, handles, application groups and XDATA remain unchanged. Values are limited to 2,048 characters, cannot contain newlines/NUL, and cannot introduce field expressions. Constant, field-backed and embedded multiline attributes are read only. It does not edit ATTDEF definitions, create/synchronize attributes, or provide complete Enhanced Attribute Editor parity.
+
+Source reuse is accepted only when the entire retained INSERT/ATTRIB/SEQEND sequence still matches the modeled display, and all source-record differences are the allowed value edits. Changed root styles can be patched as well. Moving/deforming the compound or privately changing its children invalidates this editing path instead of restoring stale geometry. Invisible-only inserts currently represented as plain block references are not exposed by this editor. Export/reimport a converted block to obtain a new validated source baseline. Export **with the retained DxfSource**, including after native save/reopen, preserves the supported edited sequence; export without provenance still uses the documented compound-to-display fallback. External fields, association graphs and private caches are not regenerated.
+
+The annotation increment adds regression checks for value preservation, invisible/constant attributes, stale/locked/invalid transactions, geometry/identity/placement retention and Unicode ASCII/binary exchange. Independent ezdxf audit verifies attribute application/XDATA and sibling values after export. The browser suite uses the real standard-file-chooser fallback, Properties/ribbon/double-click interactions, Apply/Cancel/Undo and strictly newer native checkpoint generations. No test uses a drawing-mutation hook.
+
+References: Autodesk ATTRIB groups and DDEDIT behavior:
+- https://help.autodesk.com/cloudhelp/2023/ENU/AutoCAD-DXF/files/GUID-7DD8B495-C3F8-48CD-A766-14F9D7D0DD9B.htm
+- https://help.autodesk.com/cloudhelp/2026/ENU/AutoCAD-MAC-Core/files/GUID-0F9A2AC5-AB45-48C0-B334-8FAB9B1AC09E.htm
