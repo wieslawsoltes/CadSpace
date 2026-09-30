@@ -132,7 +132,7 @@ jobs:
           ln -s "$PWD/artifacts/site" artifacts/server/CadSpace
           python -m http.server 8177 --bind 127.0.0.1 --directory artifacts/server > artifacts/server.log 2>&1 &
           result=0
-          for test in recovery_storage smoke styles widths workspace workspace_polish typography editing; do
+          for test in recovery_storage smoke styles widths workspace workspace_polish typography editing annotations; do
             python "tests/browser/$test.py" || result=1
           done
           exit "$result"

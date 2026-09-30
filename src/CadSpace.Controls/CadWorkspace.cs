@@ -56,6 +56,7 @@ public sealed partial class CadWorkspace : UserControl
         CadUi.Identify(CommandLine.Input, "command.input", "CAD command input");
         MenuBar.CommandRequested += Invoke; ApplicationBar.CommandRequested += Invoke; Ribbon.CommandRequested += Invoke; ToolPalette.CommandRequested += Invoke;
         Ribbon.Message += CommandLine.AddMessage; ToolPalette.InsertRequested += Insert; Palette.InsertRequested += Insert;
+        Palette.AnnotationEditRequested += () => Invoke("DDEDIT");
         Palette.Message += CommandLine.AddMessage; Viewport.Message += CommandLine.AddMessage; Viewport.CoordinatesChanged += StatusBar.SetCoordinates;
         DocumentTabs.NewRequested += () => Invoke("NEW");
         DocumentTabs.DocumentsChanged += () => ApplicationBar.ApplicationMenu.SetDocuments(DocumentTabs.Documents);
@@ -220,6 +221,6 @@ public sealed partial class CadWorkspace : UserControl
             Visit(this); if (XamlRoot != null) foreach (var popup in VisualTreeHelper.GetOpenPopupsForXamlRoot(XamlRoot)) if (popup.Child != null) Visit(popup.Child); w.WriteEndObject();
         }
         Console.WriteLine("CADSPACE_UI_BOUNDS:" + Encoding.UTF8.GetString(buffer.ToArray()));
-        Console.WriteLine(FormattableString.Invariant($"CADSPACE_UI_STATE: workspace={_workspaceName}; model={Viewport.Is3D}; yaw={Viewport.ModelCamera.Yaw}; pitch={Viewport.ModelCamera.Pitch}; clean={_cleanScreen}; snapModes={(int)(_session?.SnapModes ?? ObjectSnapModes.None)}; grid={_session?.GridVisible}"));
+        Console.WriteLine(FormattableString.Invariant($"CADSPACE_UI_STATE: workspace={_workspaceName}; model={Viewport.Is3D}; yaw={Viewport.ModelCamera.Yaw}; pitch={Viewport.ModelCamera.Pitch}; clean={_cleanScreen}; snapModes={(int)(_session?.SnapModes ?? ObjectSnapModes.None)}; grid={_session?.GridVisible}; cx={Viewport.Camera.Center.X:R}; cy={Viewport.Camera.Center.Y:R}; ppu={Viewport.Camera.PixelsPerUnit:R}"));
     }
 }

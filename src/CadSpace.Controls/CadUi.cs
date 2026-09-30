@@ -56,6 +56,7 @@ public static class CadUi
         };
     }
     public static string Label(string command) => command switch {
+        "DDEDIT" => "Edit Text", "EATTEDIT" => "Edit Attributes",
         "MATCHPROP" => "Match Properties", "DONUT" => "Donut", "POLYGON" => "Polygon",
         "LAYOUT_NEW" => "New Layout", "LAYOUT_RENAME" => "Rename", "LAYOUT_DELETE" => "Delete Layout", "CLEANSCREENON" => "Clean Screen",
         "PLINE" => "Polyline", "RECTANG" => "Rectangle", "DIMALIGNED" => "Dimension", "3DORBIT" => "Orbit",

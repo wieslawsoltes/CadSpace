@@ -48,6 +48,7 @@ jobs:
         run: |
           python -m pip install ezdxf==1.4.4
           python tests/fixtures/generate.py
+          python tests/fixtures/editing.py
       - run: dotnet run --project tests/CadSpace.Tests -c Release
       - run: dotnet run --project tests/CadSpace.Exchange.Tests -c Release
       - run: dotnet run --project tests/CadSpace.Persistence.Tests -c Release
@@ -55,12 +56,15 @@ jobs:
         env:
           CADSPACE_EXCHANGE_OUTPUT: artifacts/dxf-audit
           CADSPACE_STYLE_OUTPUT: artifacts/styles-audit
+          CADSPACE_EDITING_OUTPUT: artifacts/editing-audit
         run: |
           dotnet run --project tests/CadSpace.Advanced.Tests -c Release
           dotnet run --project tests/CadSpace.Performance.Tests -c Release
           python tests/fixtures/audit.py
           python tests/fixtures/audit_widths.py
           python tests/fixtures/audit_styles.py artifacts/styles-audit
+          dotnet run --project tests/CadSpace.Editing.Tests -c Release
+          python tests/fixtures/editing.py artifacts/editing-audit
 
   desktop:
     name: Desktop (${{ matrix.rid }})

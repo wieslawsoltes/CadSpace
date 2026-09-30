@@ -24,6 +24,8 @@ public sealed partial class CommandEngine(CadSession session)
     public event Action<string>? ViewRequested;
     public static IReadOnlyList<CommandInfo> Commands { get; } = new CommandInfo[]
     {
+        new("DDEDIT", "ED", "Edit selected or picked text and block attribute values", "Annotate"),
+        new("EATTEDIT", "ATE", "Edit retained attribute values on one block reference", "Blocks"),
         new("POLYGON", "POL", "Regular inscribed or circumscribed polygon", "Draw"),
         new("DONUT", "DO", "Native two-arc wide polyline rings or filled discs", "Draw"),
         new("MATCHPROP", "MA", "Preselect destinations, then pick a source for common properties", "Modify"),
@@ -79,7 +81,7 @@ public sealed partial class CommandEngine(CadSession session)
         input = input.Trim();
         try
         {
-            if (TrySubmitDrafting(input)) return;
+            if (TrySubmitAnnotation(input) || TrySubmitDrafting(input)) return;
             if (!IsActive)
             {
                 if (input.Length == 0) return;
@@ -192,7 +194,7 @@ public sealed partial class CommandEngine(CadSession session)
         if (!IsActive || !point.IsFinite) return;
         try
         {
-            if (TryDraftPoint(point)) return;
+            if (TryAnnotationPoint(point) || TryDraftPoint(point)) return;
             if (RequiresNumber || _active is "ARRAY" or "QSELECT" || (_active is "BLOCK" or "INSERT" && _text.Length == 0)) { Message?.Invoke(Prompt); return; }
             if (_active == "TEXT" && _points.Count == 1) { Message?.Invoke("Enter the text in the command line."); return; }
             if (_active is "TRIM" or "EXTEND") { Session.TrimOrExtend(point, PickTolerance, _active == "EXTEND"); Cancel(); return; }

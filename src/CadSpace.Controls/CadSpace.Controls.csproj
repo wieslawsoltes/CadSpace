@@ -12,6 +12,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../CadSpace.Engine/CadSpace.Engine.csproj" />
+    <ProjectReference Include="../CadSpace.Dxf/CadSpace.Dxf.csproj" />
     <ProjectReference Include="../CadSpace.Rendering/CadSpace.Rendering.csproj" />
     <PackageReference Include="Uno.WinUI.Graphics3DGL" Version="6.7.135" Condition="'$(TargetFramework)' == 'net10.0-browserwasm'" />
   </ItemGroup>

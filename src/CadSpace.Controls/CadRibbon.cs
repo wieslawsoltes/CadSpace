@@ -123,8 +123,8 @@ public sealed class CadRibbon : UserControl
                 var properties = new CadRibbonPanel("Properties", () => Invoke("PROPERTIES")); properties.Items.Children.Add(_properties); _groups.Children.Add(properties);
                 var utilities = new CadRibbonPanel("Utilities"); utilities.Items.Children.Add(new CadRibbonButton("DIST", Invoke, "AREA")); Small(utilities, "QSELECT", "SELECTSIMILAR", "SELECTALL"); _groups.Children.Add(utilities); break;
             case "Modify": Group("Transform", "MOVE", "COPY", "ROTATE", "SCALE", "MIRROR", "STRETCH"); Group("Edit", "TRIM", "EXTEND", "FILLET", "CHAMFER", "BREAK", "JOIN"); Group("Polyline", "PEDIT", "PLINEWID"); Group("Properties", "MATCHPROP"); Group("Pattern", "OFFSET", "ARRAY", "EXPLODE", "ERASE"); break;
-            case "Insert": Group("Blocks", "INSERT", "BLOCK", "EXPLODE"); Group("Pattern", "ARRAY"); Group("Content", "TOOLPALETTES", "OPEN"); break;
-            case "Annotate": Group("Text", "TEXT"); Group("Dimensions", "DIMALIGNED", "DIST", "AREA"); Group("Hatching", "HATCH"); break;
+            case "Insert": Group("Blocks", "INSERT", "BLOCK", "EATTEDIT", "EXPLODE"); Group("Pattern", "ARRAY"); Group("Content", "TOOLPALETTES", "OPEN"); break;
+            case "Annotate": Group("Text", "TEXT", "DDEDIT"); Group("Dimensions", "DIMALIGNED", "DIST", "AREA"); Group("Hatching", "HATCH"); break;
             case "Layout": Group("Layouts", "LAYOUT_NEW", "LAYOUT_RENAME", "LAYOUT_DELETE"); Group("View", "TOP", "ZOOM"); break;
             case "3D Modeling": Group("Mesh Primitives", "BOX", "CYLINDER", "SPHERE", "CONE"); Group("Mesh Surfaces", "EXTRUDE", "REVOLVE", "SWEEP", "LOFT"); Group("Mesh Booleans", "UNION", "SUBTRACT", "INTERSECT"); Group("Transform", "ROTATE3D", "MIRROR3D", "ALIGN3D"); break;
             case "View": Group("Views", "TOP", "3DORBIT", "ZOOM"); Group("Palettes", "PROPERTIES", "TOOLPALETTES", "LAYER", "LINETYPE"); Group("Workspace", "OPTIONS", "CLEANSCREENON"); break;

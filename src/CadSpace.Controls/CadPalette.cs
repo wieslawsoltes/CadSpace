@@ -20,6 +20,7 @@ public sealed class CadPalette : UserControl
     private string _builtTab = "", _builtLayer = "";
     public event Action<string>? Message;
     public event Action<string>? InsertRequested;
+    public event Action? AnnotationEditRequested;
     public CadPalette()
     {
         var root = CadTheme.Grid(33, -1); root.Background = CadTheme.Brush(CadTheme.Background);
@@ -85,7 +86,10 @@ public sealed class CadPalette : UserControl
         lineTypes.SelectionChanged += (_, _) => { if (!_building && lineTypes.SelectedItem is string name && selected.Any(e => e.Linetype != name)) Try(() => session.SetSelectedLinetype(name)); };
         _body.Children.Add(CadTheme.Text("Linetype", 11, CadTheme.Muted)); _body.Children.Add(lineTypes);
         if (selected.Length != 1) return;
-        var entity = selected[0]; Field("Handle", entity.Handle.Length == 0 ? "New object" : entity.Handle);
+        var entity = selected[0];
+        if (editable && TextEditing.IsEditable(entity))
+            _body.Children.Add(CadUi.TextButton(entity is CompositeEntity ? "Edit block attributes…" : "Edit text…", () => AnnotationEditRequested?.Invoke(), "properties.annotation"));
+        Field("Handle", entity.Handle.Length == 0 ? "New object" : entity.Handle);
         Action<string>? editColor = editable ? value => { if (!uint.TryParse(value.TrimStart('#'), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var color) || value.TrimStart('#').Length != 6) throw new ArgumentException("Use a six-digit RGB color."); Update(entity, e => e with { TrueColor = 0xFF000000u | color }); } : null;
         Field("RGB color", ((entity.TrueColor ?? session.Document.Drawing.LayerFor(entity).Color) & 0xFFFFFF).ToString("X6"), editColor);
         if (!editable) { Heading("Read only"); Field("Reason", entity is OpaqueEntity ? "Unsupported DXF record" : "Locked layer"); return; }

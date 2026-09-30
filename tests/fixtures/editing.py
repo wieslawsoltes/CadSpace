@@ -17,7 +17,11 @@ def generate():
     block.add_line((0, 0), (10, 0))
     block.add_attdef('LABEL', (0, 0), height=2)
     insert = doc.modelspace().add_blockref('PART', (50, 50))
-    insert.add_attrib('LABEL', 'Part A', (50, 50), {'height': 2})
+    attribute = insert.add_attrib('LABEL', 'Part A', (50, 50), {'height': 2})
+    attribute.set_app_data('CS_EDIT', [(1, 'retained attribute application note'), (40, 13.5)])
+    attribute.set_xdata('CS_EDIT', [(1000, 'retained attribute extended note')])
+    insert.add_attrib('SERIAL', 'Hidden A', (50, 47), {'height': 2, 'flags': 1})
+    insert.add_attrib('CONST', 'Fixed', (50, 44), {'height': 2, 'flags': 2})
     path = root / 'independent-editing.dxf'
     doc.saveas(path)
     # Keep syntax independent and preserve the library-produced ownership/table structure.
@@ -47,11 +51,21 @@ def generate():
 
 def audit(folder):
     folder = Path(folder)
-    for name in ('edited.dxf', 'edited-binary.dxf', 'tools.dxf', 'tools-binary.dxf'):
+    for name in ('edited.dxf', 'edited-binary.dxf', 'tools.dxf', 'tools-binary.dxf', 'attributes.dxf', 'attributes-binary.dxf'):
         doc = ezdxf.readfile(folder / name); report = doc.audit()
         assert not report.errors and not report.fixes, (name, report.errors, report.fixes)
         model = doc.modelspace()
-        if name.startswith('edited'):
+        if name.startswith('attributes'):
+            insert = model.query('INSERT')[0]
+            attr = insert.get_attrib('LABEL')
+            assert attr.dxf.text == 'Part Ω / 42'
+            assert tuple(attr.dxf.insert) == (50, 50, 0)
+            assert list(attr.get_app_data('CS_EDIT'))[0].value == 'retained attribute application note'
+            assert list(attr.get_xdata('CS_EDIT'))[0].value == 'retained attribute extended note'
+            assert insert.get_attrib('SERIAL').dxf.text == 'Hidden A'
+            assert insert.get_attrib('CONST').dxf.text == 'Fixed'
+            assert len(insert.attribs) == 3
+        elif name.startswith('edited'):
             line = model.query('LINE')[0]
             assert tuple(line.dxf.end) == (60, 70, 80)
             assert list(line.get_app_data('CS_EDIT'))[0].value == 'retained application note'

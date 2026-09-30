@@ -130,7 +130,8 @@ public static class DxfCodec
         {
             if (source != null && originals.TryGetValue(entity.Id, out var original) && entity == original && source.Records.TryGetValue(entity.Id, out var raw)) return Encode(raw);
             if (source != null && originals.TryGetValue(entity.Id, out var prior) && source.Records.TryGetValue(entity.Id, out var retained)
-                && DxfRecordEditing.TryWrite(entity, prior, retained, warnings.Add, out var patched)) return patched;
+                && (DxfAttributeEditing.TryWrite(entity, prior, retained, warnings.Add, out var patched)
+                    || DxfRecordEditing.TryWrite(entity, prior, retained, warnings.Add, out patched))) return patched;
             if (entity is OpaqueEntity opaque) return opaque.RawRecord;
             var buffer = new StringBuilder();
             void Pair(int code, object value) => buffer.Append(code.ToString(Culture)).Append('\n').Append(Convert.ToString(value, Culture)).Append('\n');
