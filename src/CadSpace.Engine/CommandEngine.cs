@@ -24,6 +24,9 @@ public sealed partial class CommandEngine(CadSession session)
     public event Action<string>? ViewRequested;
     public static IReadOnlyList<CommandInfo> Commands { get; } = new CommandInfo[]
     {
+        new("GRADIENT", "GD", "Gradient hatch from selected coplanar closed boundaries", "Draw"),
+        new("HATCHEDIT", "HE", "Edit one selected or picked hatch", "Modify"),
+        new("HATCHGENERATEBOUNDARY", "HGB", "Extract selected hatch loops as closed polylines", "Modify"),
         new("SPLINEDIT", "SPE", "Edit spline control points and weights; insert shape-preserving knots", "Modify"),
         new("DIMLINEAR", "DLI", "Horizontal or vertical linear dimension", "Annotate"),
         new("DIMROTATED", "DROT", "Linear dimension at an explicit local angle", "Annotate"),
@@ -67,7 +70,7 @@ public sealed partial class CommandEngine(CadSession session)
         new("PLINEWID", "PLINEWID", "Default width of new polylines and rectangles", "Draw"),
         new("LINE", "L", "Connected line segments", "Draw"), new("PLINE", "PL", "Polyline; Enter finishes, C closes", "Draw"), new("RECTANG", "REC", "Rectangle from two corners", "Draw"),
         new("CIRCLE", "C", "Center and radius", "Draw"), new("ARC", "A", "Arc through three points", "Draw"), new("POINT", "PO", "Model-space point", "Draw"), new("ELLIPSE", "EL", "Center, major-axis point, minor radius", "Draw"),
-        new("TEXT", "T", "Single-line text", "Annotate"), new("DIMALIGNED", "DAL", "Aligned dimension", "Annotate"), new("HATCH", "H", "Hatch selected closed polyline", "Annotate"),
+        new("TEXT", "T", "Single-line text", "Annotate"), new("DIMALIGNED", "DAL", "Aligned dimension", "Annotate"), new("HATCH", "H", "Hatch selected coplanar closed polylines or circles", "Annotate"),
         new("MOVE", "M", "Move selected objects", "Modify"), new("COPY", "CO", "Copy selected objects", "Modify"), new("ROTATE", "RO", "Rotate about base point", "Modify"),
         new("SCALE", "SC", "Uniform scaling about base point", "Modify"), new("MIRROR", "MI", "Mirror about two-point XY axis", "Modify"), new("OFFSET", "O", "Signed line/arc/circle offset", "Modify"),
         new("ERASE", "E", "Erase selected objects", "Modify"), new("EXPLODE", "X", "Explode blocks or straight polylines", "Modify"), new("ARRAY", "AR", "Rectangular array", "Modify"),
@@ -91,7 +94,7 @@ public sealed partial class CommandEngine(CadSession session)
         input = input.Trim();
         try
         {
-            if (TrySubmitSpline(input) || TrySubmitDimension(input) || TrySubmitMText(input) || TrySubmitAnnotation(input) || TrySubmitDrafting(input)) return;
+            if (TrySubmitHatch(input) || TrySubmitSpline(input) || TrySubmitDimension(input) || TrySubmitMText(input) || TrySubmitAnnotation(input) || TrySubmitDrafting(input)) return;
             if (!IsActive)
             {
                 if (input.Length == 0) return;
@@ -204,7 +207,7 @@ public sealed partial class CommandEngine(CadSession session)
         if (!IsActive || !point.IsFinite) return;
         try
         {
-            if (TrySplinePoint(point) || TryDimensionPoint(point) || TryMTextPoint(point) || TryAnnotationPoint(point) || TryDraftPoint(point)) return;
+            if (TryHatchPoint(point) || TrySplinePoint(point) || TryDimensionPoint(point) || TryMTextPoint(point) || TryAnnotationPoint(point) || TryDraftPoint(point)) return;
             if (RequiresNumber || _active is "ARRAY" or "QSELECT" || (_active is "BLOCK" or "INSERT" && _text.Length == 0)) { Message?.Invoke(Prompt); return; }
             if (_active == "TEXT" && _points.Count == 1) { Message?.Invoke("Enter the text in the command line."); return; }
             if (_active is "TRIM" or "EXTEND") { Session.TrimOrExtend(point, PickTolerance, _active == "EXTEND"); Cancel(); return; }

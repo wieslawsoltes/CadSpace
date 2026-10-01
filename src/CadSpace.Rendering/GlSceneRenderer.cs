@@ -143,7 +143,7 @@ public sealed class GlSceneRenderer
         }
         foreach (var triangle in scene.Triangles)
         {
-            var n = (triangle.B - triangle.A).Cross(triangle.C - triangle.A); if (n.Length < 1e-12) continue; n = n.Normalized;
+            var n = (triangle.B - triangle.A).Cross(triangle.C - triangle.A); if (n.Length < 1e-12) continue; n = triangle.ColorB.HasValue ? default : n.Normalized;
             Vertex(triangle.A, n, triangle.Color, triangle.EntityId); Vertex(triangle.B, n, triangle.ColorB ?? triangle.Color, triangle.EntityId); Vertex(triangle.C, n, triangle.ColorC ?? triangle.Color, triangle.EntityId);
         }
         _triangleCount = offset / 10;

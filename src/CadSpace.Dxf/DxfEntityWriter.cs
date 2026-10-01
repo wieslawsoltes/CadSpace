@@ -33,8 +33,9 @@ internal static class DxfEntityWriter
             Start("HATCH", "AcDbHatch"); Point(10, new(0, 0, z)); Point(210, normal); Pair(2, hatch.PatternName); Pair(70, hatch.Solid ? 1 : 0); Pair(71, 0); Pair(91, hatch.Loops.Length);
             foreach (var loop in hatch.Loops)
             {
-                Pair(92, 2); Pair(72, loop.Any(v => v.Bulge != 0) ? 1 : 0); Pair(73, 1); Pair(93, loop.Length);
-                foreach (var vertex in loop) { Pair(10, vertex.Position.X); Pair(20, vertex.Position.Y); if (loop.Any(v => v.Bulge != 0)) Pair(42, vertex.Bulge); }
+                var bulged = loop.Any(v => v.Bulge != 0);
+                Pair(92, 2); Pair(72, bulged ? 1 : 0); Pair(73, 1); Pair(93, loop.Length);
+                foreach (var vertex in loop) { Pair(10, vertex.Position.X); Pair(20, vertex.Position.Y); if (bulged) Pair(42, vertex.Bulge); }
                 Pair(97, 0);
             }
             Pair(75, hatch.IslandStyle); Pair(76, 1);

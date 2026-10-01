@@ -54,7 +54,9 @@ public static class HatchEditing
         if (!solid && pattern.IsEmpty) throw new ArgumentException("A patterned hatch needs at least one line family.");
         var next = h with { Solid = solid, Pattern = pattern, PatternName = patternName, IslandStyle = islands, Gradient = gradient };
         AdvancedGeometry.Validate(next);
-        if (next == h) return;
+        var samePattern = pattern.Length == h.Pattern.Length && pattern.Zip(h.Pattern).All(p =>
+            p.First with { Dashes = p.Second.Dashes } == p.Second && p.First.Dashes.SequenceEqual(p.Second.Dashes));
+        if (samePattern && next with { Pattern = h.Pattern } == h) return;
         Entity Replace(Entity e) => e is PlacedEntity p ? p with { Geometry = Replace(p.Geometry) } : next with {
             Id = e.Id, Handle = e.Handle, Layer = e.Layer, Layout = e.Layout, Visible = e.Visible, ColorIndex = e.ColorIndex,
             TrueColor = e.TrueColor, LineWeight = e.LineWeight, Linetype = e.Linetype, LinetypeScale = e.LinetypeScale };

@@ -110,8 +110,9 @@ Test("gradient rejects invalid stops controls and transformed shear",()=>{
     Reject(()=>DxfCodec.Write(Drawing.Empty with{Entities=[new PlacedEntity(h,Transform3.Scaling(new(2,1,1)))]}));
 });
 Test("HATCH GRADIENT HATCHEDIT and boundary commands are connected",()=>{
-    var s=Session(new CircleEntity(default,10));var c=new CommandEngine(s);c.Start("HATCH");
-    Check(HatchEditing.Unwrap(s.Document.Drawing.Entities[^1])!=null);s.Document.Undo();c.Start("GD");
+    var s=Session(new CircleEntity(default,10));var c=new CommandEngine(s);
+    foreach(var name in new[]{"HATCH","H"}) { c.Start(name);Check(HatchEditing.Unwrap(s.Document.Drawing.Entities[^1])!=null);s.Document.Undo(); }
+    c.Start("GD");
     var h=s.Document.Drawing.Entities[^1];Check(HatchEditing.Unwrap(h)!.Gradient!=null);s.Select(h.Id);
     var request="";c.ViewRequested+=r=>request=r;c.Start("HE");Check(request=="HATCHEDITOR" && !c.IsActive);
     c.Start("HGB");Check(s.Document.Drawing.Entities[^1] is PolylineEntity);
@@ -132,6 +133,7 @@ Test("moved retained INSERT cannot silently restore old attributes",()=>{
     var moved=EntityGeometry.Transform(root,Transform3.Translation(new(1,2)));
     var output=DxfCodec.Write(input.Drawing with{Entities=[moved]});Check(output.Warnings.Any(w=>w.Contains("display children")));
 });
+SafetyRegression.Register(Test);
 var failed=0;
 foreach(var (name,test) in tests)try{test();Console.WriteLine("PASS "+name);}catch(Exception e){failed++;Console.Error.WriteLine("FAIL "+name+": "+e);}
 Console.WriteLine($"{tests.Count-failed}/{tests.Count} hatch and retained-attribute tests passed.");return failed==0?0:1;

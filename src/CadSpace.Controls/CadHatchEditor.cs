@@ -70,7 +70,8 @@ public sealed class CadHatchEditor : UserControl
         var mode = _mode.SelectedIndex; var h = _original;
         HatchGradient? gradient = mode == 4 ? new((string)_gradient.SelectedItem, Color("first"), Color("second"), N("angle"), N("shift"), h.Gradient?.SingleColor ?? false, h.Gradient?.Tint ?? 0) : mode == 0 ? h.Gradient : null;
         var solid = mode is 1 or 4 || mode == 0 && h.Solid;
-        var pattern = mode is 2 or 3 ? HatchEditing.Pattern(N("angle"), N("spacing"), default, mode == 3) : mode == 0 ? h.Pattern : ImmutableArray<HatchPatternLine>.Empty;
-        _session.SetFill(_expected, solid, pattern, mode == 0 ? h.PatternName : solid ? "SOLID" : "USER", _islands.SelectedIndex, gradient);
+        var retain = mode == 0 || mode == _initialMode && mode is 1 or 4;
+        var pattern = mode is 2 or 3 ? HatchEditing.Pattern(N("angle"), N("spacing"), default, mode == 3) : retain ? h.Pattern : ImmutableArray<HatchPatternLine>.Empty;
+        _session.SetFill(_expected, solid, pattern, retain ? h.PatternName : solid ? "SOLID" : "USER", _islands.SelectedIndex, gradient);
     }
 }

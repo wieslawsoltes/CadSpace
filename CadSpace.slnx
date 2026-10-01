@@ -10,6 +10,7 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/CadSpace.Spline.Tests/CadSpace.Spline.Tests.csproj" />
+    <Project Path="tests/CadSpace.Hatch.Tests/CadSpace.Hatch.Tests.csproj" />
     <Project Path="tests/CadSpace.Dimension.Tests/CadSpace.Dimension.Tests.csproj" />
     <Project Path="tests/CadSpace.Editing.Tests/CadSpace.Editing.Tests.csproj" />
     <Project Path="tests/CadSpace.Tests/CadSpace.Tests.csproj" />

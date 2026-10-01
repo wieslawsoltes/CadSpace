@@ -157,10 +157,13 @@ public static class DxfAttributeEditing
         {
             var records = ValidatedRecords(insert);
             var raw = records.SelectMany(r => r).ToImmutableArray();
+            // A copied/renamed root must not reintroduce the former root handle.
+            if (!S(DxfRecordEditing.SemanticPairs(records[0]), 5).Equals(insert.Handle, StringComparison.OrdinalIgnoreCase)) return false;
             var original = DxfEntityReader.Read(DxfRecordEditing.SemanticPairs(raw), _ => { });
             var baseline = (CompositeEntity)CopyRootStyle(insert, original);
             baseline = baseline with { Id = insert.Id, Handle = insert.Handle };
             if (!DxfRecordEditing.TryWrite(insert, baseline, raw, warn, out text)) return false;
+            warn("Retained INSERT/ATTRIB sequence: application payloads and external references are preserved, not remapped or regenerated.");
             return true;
         }
         catch (Exception e) when (e is ArgumentException or FormatException or NotSupportedException or OverflowException)

@@ -40,7 +40,10 @@ public static class HatchGradientGeometry
         var axis = GeometryMath.OnCircle(default, 1, g.Angle); var up = new Vec3(-axis.Y, axis.X);
         var center = Bounds3.From(loops.SelectMany(p => p)).Center;
         var projected = loops.SelectMany(p => p).Select(p => new Vec3((p - center).Dot(axis), (p - center).Dot(up))).ToArray();
-        var box = Bounds3.From(projected); var width = Math.Max(1e-12, box.Size.X); var height = Math.Max(1e-12, box.Size.Y);
+        var box = Bounds3.From(projected);
+        if (!center.IsFinite || projected.Any(p => !p.IsFinite) || !box.Size.IsFinite)
+            throw new ArgumentException("Gradient bounds exceed the numeric range.");
+        var width = Math.Max(1e-12, box.Size.X); var height = Math.Max(1e-12, box.Size.Y);
         double Value(Vec3 point)
         {
             var delta = point - center;

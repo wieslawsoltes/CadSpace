@@ -10,6 +10,7 @@ public sealed class SkiaDraftRenderer : IDisposable
     private readonly SKPaint _stroke = new() { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1 };
     private readonly SKPaint _fill = new() { IsAntialias = true, Style = SKPaintStyle.Fill };
     private readonly List<int> _visiblePaths = new(), _visibleTexts = new();
+    private readonly SkiaGradientBatches _gradients = new();
     private readonly SKFont _font = new(SKTypeface.Default, 12);
     public static SKColor Color(uint c) => new((byte)(c >> 16), (byte)(c >> 8), (byte)c, (byte)(c >> 24));
     private static SKPoint Pixel(Camera2D camera, Vec3 p) { var s = camera.WorldToScreen(p); return new((float)s.X, (float)s.Y); }
@@ -22,6 +23,7 @@ public sealed class SkiaDraftRenderer : IDisposable
     }
     public void DrawScene(SKCanvas canvas, Camera2D camera, DrawingScene scene, IReadOnlySet<Guid> selected, bool preview = false)
     {
+        _gradients.Begin(scene);
         var bounds = camera.VisibleBounds;
         var acceleration = SceneAcceleration.For(scene);
         _visiblePaths.Clear(); acceleration.Paths.Query(bounds, _visiblePaths, xyOnly:true); _visiblePaths.Sort();
@@ -47,11 +49,7 @@ public sealed class SkiaDraftRenderer : IDisposable
                 }
                 continue;
             }
-            if (!preview && !highlight && path.VertexColors.Length == 3 && path.Points.Length == 3)
-            {
-                using var colored = SKVertices.CreateCopy(SKVertexMode.Triangles, path.Points.Select(p => Pixel(camera, p)).ToArray(), path.VertexColors.Select(Color).ToArray());
-                _fill.Color = SKColors.White; canvas.DrawVertices(colored, SKBlendMode.Modulate, _fill); continue;
-            }
+            if (_gradients.Draw(canvas, camera, index, highlight, preview, _fill)) continue;
             using var outline = new SKPath(); outline.MoveTo(Pixel(camera, path.Points[0]));
             for (var i = 1; i < path.Points.Length; i++) outline.LineTo(Pixel(camera, path.Points[i]));
             if (path.Closed) outline.Close();
@@ -126,5 +124,5 @@ public sealed class SkiaDraftRenderer : IDisposable
         _stroke.Color = new SKColor(133, 193, 104); canvas.DrawLine(x, y, x, y - 42, _stroke);
         _font.Size = 11; _fill.Color = new SKColor(198, 207, 220); canvas.DrawText("X", x + 47, y + 4, _font, _fill); canvas.DrawText("Y", x - 4, y - 48, _font, _fill); canvas.DrawText("WCS", x - 5, y + 20, _font, _fill);
     }
-    public void Dispose() { _stroke.Dispose(); _fill.Dispose(); _font.Dispose(); }
+    public void Dispose() { _stroke.Dispose(); _fill.Dispose(); _font.Dispose(); _gradients.Dispose(); }
 }
