@@ -1,5 +1,12 @@
 # Changelog
 
+## Native dimensions (unreleased)
+
+- Added seven typed DIMENSION subtypes with native ASCII/binary definition, DIMSTYLE and anonymous-picture export; retained imported pictures until definition edits.
+- Integrated eight dimension commands, previews, additional grips, staged formatting, Properties, contextual/classic menus and double-click editing.
+- Added dimension-bearing native project v3 with validated v1/v2 provenance compatibility, weak identity caches, shared export styles and bounded picture naming.
+- Added 64 headless regressions (503 total), eight independent audits (26 total) and a real-control/export/reimport browser suite. See docs/DIMENSIONS.md for remaining boundaries.
+
 ## File-provider completion (unreleased)
 
 - Complete deferred provider updates after native and DXF writes so browser fallback downloads actually start; unsuccessful completion cannot mark the native drawing saved or clear recovery.
