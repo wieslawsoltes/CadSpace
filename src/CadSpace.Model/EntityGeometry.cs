@@ -6,13 +6,18 @@ namespace CadSpace.Model;
 public sealed record ScenePath(Guid EntityId, string Layer, uint Color, ImmutableArray<Vec3> Points, bool Closed, bool Filled = false, double Weight = 0.25)
 {
     public StrokePattern? Pattern { get; init; }
+    public ImmutableArray<uint> VertexColors { get; init; } = [];
 }
 public sealed record SceneText(Guid EntityId, string Layer, uint Color, Vec3 Position, string Text, double Height, double Rotation)
 {
     public Vec3 AxisX { get; init; } = Vec3.UnitX;
     public Vec3 AxisY { get; init; } = Vec3.UnitY;
 }
-public sealed record SceneTriangle(Guid EntityId, uint Color, Vec3 A, Vec3 B, Vec3 C);
+public sealed record SceneTriangle(Guid EntityId, uint Color, Vec3 A, Vec3 B, Vec3 C)
+{
+    public uint? ColorB { get; init; }
+    public uint? ColorC { get; init; }
+}
 public sealed record DrawingScene(ImmutableArray<ScenePath> Paths, ImmutableArray<SceneText> Texts, ImmutableArray<SceneTriangle> Triangles)
 {
     public Bounds3 Bounds => SceneBounds.For(this);
@@ -98,6 +103,15 @@ public static class EntityGeometry
             {
                 case PlacedEntity placed: Child(placed.Geometry, placed.Placement.Then(transform)); break;
                 case CompositeEntity composite: foreach (var child in composite.Children) Child(child, transform, false); break;
+                case HatchRegionEntity { Gradient: not null } gradient:
+                    foreach (var face in HatchGradientGeometry.For(gradient))
+                    {
+                        var a = transform.Point(face.A); var b = transform.Point(face.B); var c = transform.Point(face.C);
+                        if (triangles.Count >= 1000000 || (vertices += 3) > 2000000) throw new ArgumentException("Expanded gradient exceeds the scene budget.");
+                        triangles.Add(new(root, face.ColorA, a, b, c) { ColorB = face.ColorB, ColorC = face.ColorC });
+                        paths.Add(new(root, layerName, face.ColorA, [a,b,c], true, true) { VertexColors = [face.ColorA, face.ColorB, face.ColorC] });
+                    }
+                    break;
                 case SplineEntity or Polyline3DEntity or HatchRegionEntity:
                     if (e is HatchRegionEntity) { pattern = null; lineName = "CONTINUOUS"; }
                     foreach (var child in AdvancedGeometry.Expand(e)) Child(child, transform); break;

@@ -130,7 +130,7 @@ public sealed class GlSceneRenderer
     }
     private void Upload(GL gl, DrawingScene scene, Vec3 origin, IReadOnlySet<Guid> selection)
     {
-        var capacity = checked(scene.Triangles.Length*3 + scene.Paths.Sum(p => p.Points.Length==1?1:Math.Max(0,p.Points.Length-(p.Closed?0:1))*2));
+        var capacity = checked(scene.Triangles.Length*3 + scene.Paths.Where(p => p.VertexColors.IsEmpty).Sum(p => p.Points.Length==1?1:Math.Max(0,p.Points.Length-(p.Closed?0:1))*2));
         var data = new float[checked(capacity*10)]; var offset=0; _flags.Clear();
         void Vertex(Vec3 position, Vec3 normal, uint color, Guid id, double tint = 1, double distance = 0)
         {
@@ -144,11 +144,11 @@ public sealed class GlSceneRenderer
         foreach (var triangle in scene.Triangles)
         {
             var n = (triangle.B - triangle.A).Cross(triangle.C - triangle.A); if (n.Length < 1e-12) continue; n = n.Normalized;
-            Vertex(triangle.A, n, triangle.Color, triangle.EntityId); Vertex(triangle.B, n, triangle.Color, triangle.EntityId); Vertex(triangle.C, n, triangle.Color, triangle.EntityId);
+            Vertex(triangle.A, n, triangle.Color, triangle.EntityId); Vertex(triangle.B, n, triangle.ColorB ?? triangle.Color, triangle.EntityId); Vertex(triangle.C, n, triangle.ColorC ?? triangle.Color, triangle.EntityId);
         }
         _triangleCount = offset / 10;
         _lineBatches.Clear();
-        foreach (var group in scene.Paths.Where(p => p.Points.Length > 1).GroupBy(p => p.Pattern))
+        foreach (var group in scene.Paths.Where(p => p.Points.Length > 1 && p.VertexColors.IsEmpty).GroupBy(p => p.Pattern))
         {
             var start = offset / 10;
             foreach (var path in group)

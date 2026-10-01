@@ -48,6 +48,7 @@ internal static class DxfEntityWriter
                 }
             }
             Pair(98, 0);
+            if (hatch.Gradient is { } gradient) DxfHatchGradient.Write(gradient, Pair);
             if (hatch.SampledBoundary) warn("Edited HATCH edge-list boundaries are exported as sampled polyline boundaries.");
         }
         void Ellipse(Vec3 center, Vec3 u, Vec3 v, double start, double sweep)
@@ -127,7 +128,10 @@ internal static class DxfEntityWriter
                         var direction = toLocal.Vector(GeometryMath.OnCircle(default, 1, p.Angle));
                         return new HatchPatternLine(GeometryMath.Angle(direction), toLocal.Point(p.Origin), toLocal.Vector(p.Offset), p.Dashes.Select(d => d * direction.Length).ToImmutableArray());
                     }).ToImmutableArray();
-                    Hatch(region with { Loops = loops, Pattern = patterns, SampledBoundary = region.SampledBoundary || !sameScale }, normal); break;
+                    if (region.Gradient != null && !sameScale) throw new NotSupportedException("Nonuniformly transformed gradient export needs a native project to preserve the color field.");
+                    var gradient = region.Gradient;
+                    if (gradient != null) gradient = gradient with { Angle = GeometryMath.Angle(toLocal.Vector(GeometryMath.OnCircle(default, 1, gradient.Angle))) };
+                    Hatch(region with { Loops = loops, Pattern = patterns, Gradient = gradient, SampledBoundary = region.SampledBoundary || !sameScale }, normal); break;
                 case HatchEntity simple:
                     Placed(new PlacedEntity(Region(simple), t)); break;
                 case BlockReferenceEntity block when drawing.Blocks.TryGetValue(block.Name, out var definition):
@@ -164,6 +168,7 @@ internal static class DxfEntityWriter
             case HatchEntity simple: Hatch(Region(simple)); break;
             case PlacedEntity placed: Placed(placed); break;
             case CompositeEntity composite:
+                if (DxfAttributeEditing.TryWriteRetained(composite, warn, out var retainedAttributes)) { buffer.Append(retainedAttributes); break; }
                 warn($"Modified {composite.DxfType} is exported as its explicit display children, not the original compound semantics.");
                 foreach (var child in composite.Children)
                 {

@@ -118,12 +118,16 @@ internal static class DxfDocumentWriter
             var header = oldTables.TryGetValue(name, out var old) ? Set(Set(old.Header, 5, id), 70, values.Count) : Record(0, "TABLE", 2, name, 5, id, 330, "0", 100, "AcDbSymbolTable", 70, values.Count);
             tables.Append(Encode(header)); foreach (var record in values) tables.Append(Encode(Owner(record, id))); tables.Append("0\nENDTAB\n");
         }
-        foreach (var (name, table) in oldTables.Where(t => t.Key is not ("LTYPE" or "LAYER" or "BLOCK_RECORD" or "DIMSTYLE"))) Table(name, table.Entries);
+        foreach (var (name, table) in oldTables.Where(t => t.Key is not ("LTYPE" or "LAYER" or "BLOCK_RECORD" or "DIMSTYLE" or "APPID"))) Table(name, table.Entries);
         var dimStyles = Entries("DIMSTYLE").Concat(dimensionStyles ?? []).ToArray();
         if (dimStyles.Length > 0) Table("DIMSTYLE", dimStyles);
         Table("LTYPE", DxfLinetypes.Write(drawing, source, Entries("LTYPE"), next));
         if (!oldTables.ContainsKey("STYLE")) Table("STYLE", [Record(0, "STYLE", 5, next(), 100, "AcDbSymbolTableRecord", 100, "AcDbTextStyleTableRecord", 2, "Standard", 70, 0, 40, 0, 41, 1, 50, 0, 71, 0, 42, 2.5, 3, "txt", 4, "")]);
-        if (!oldTables.ContainsKey("APPID")) Table("APPID", [Record(0, "APPID", 5, next(), 100, "AcDbSymbolTableRecord", 100, "AcDbRegAppTableRecord", 2, "ACAD", 70, 0)]);
+        var applications = Entries("APPID");
+        var applicationNames = applications.Select(r => Value(r, 2)).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        foreach (var app in DxfRetainedSymbols.ApplicationIds(drawing))
+            if (applicationNames.Add(app)) applications.Add(Record(0, "APPID", 5, next(), 100, "AcDbSymbolTableRecord", 100, "AcDbRegAppTableRecord", 2, app, 70, 0));
+        Table("APPID", applications);
         var oldLayers = Entries("LAYER").ToDictionary(p => Value(p, 2), p => p, StringComparer.OrdinalIgnoreCase);
         Table("LAYER", drawing.Layers.Values.Select(layer =>
         {

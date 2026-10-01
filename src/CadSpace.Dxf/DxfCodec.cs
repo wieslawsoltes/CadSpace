@@ -127,6 +127,18 @@ public static class DxfCodec
         if (source != null) foreach (var pair in source.Sections.SelectMany(s => s.Pairs)) if (pair.Code is 5 or 105 && ulong.TryParse(pair.Value, NumberStyles.HexNumber, Culture, out var value)) handle = Math.Max(handle, value);
         foreach (var entity in drawing.Entities.Concat(drawing.Blocks.Values.SelectMany(b => b.Entities)))
             if (ulong.TryParse(entity.Handle, NumberStyles.HexNumber, Culture, out var value)) handle = Math.Max(handle, value);
+        void ReserveChildren(Entity e)
+        {
+            if (e is CompositeEntity c)
+            {
+                if (c.SourceRecord.Length > MaximumCharacters) throw new ArgumentException("Retained compound exceeds the DXF size limit.");
+                if (c.SourceRecord.Length > 0) foreach (var pair in ParsePairs(c.SourceRecord))
+                    if (pair.Code is 5 or 105 && ulong.TryParse(pair.Value, NumberStyles.HexNumber, Culture, out var child)) handle = Math.Max(handle, child);
+                foreach (var child in c.Children) ReserveChildren(child);
+            }
+            else if (e is PlacedEntity p) ReserveChildren(p.Geometry);
+        }
+        foreach (var entity in drawing.Entities.Concat(drawing.Blocks.Values.SelectMany(b => b.Entities))) ReserveChildren(entity);
         string NewHandle() => checked(++handle).ToString("X", Culture);
         var originals = source?.Original.Entities.Concat(source.Original.Blocks.Values.SelectMany(b => b.Entities)).ToDictionary(e => e.Id) ?? new();
         var dimensions = new DxfDimensions.Exporter(drawing, source, NewHandle, warnings.Add);

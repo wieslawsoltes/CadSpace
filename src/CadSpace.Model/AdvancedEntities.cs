@@ -36,6 +36,7 @@ public sealed record HatchRegionEntity(ImmutableArray<ImmutableArray<PolyVertex>
 {
     public override string Kind => "HATCH";
     public int IslandStyle { get; init; }
+    public HatchGradient? Gradient { get; init; }
 }
 
 public static class AdvancedGeometry
@@ -67,6 +68,8 @@ public static class AdvancedGeometry
                 if (composite.Children.Length > 100000) throw new ArgumentException("Too many compound children.");
                 foreach (var child in composite.Children) Validate(child, depth + 1); break;
             case HatchRegionEntity hatch:
+                hatch.Gradient?.Validate();
+                if (hatch.Gradient != null && !hatch.Solid) throw new ArgumentException("A DXF gradient requires solid-fill mode.");
                 if (hatch.IslandStyle is < 0 or > 2) throw new ArgumentException("Invalid hatch island style.");
                 if (hatch.Loops.IsEmpty || hatch.Loops.Length > 1024 || hatch.Loops.Any(l => l.Length < 2 || l.Length > 100000 || l.Any(v => !v.Position.IsFinite || !double.IsFinite(v.Bulge)))) throw new ArgumentException("Invalid hatch boundary.");
                 if (hatch.Pattern.Length > 256 || hatch.Pattern.Any(p => !double.IsFinite(p.Angle) || !p.Origin.IsFinite || !p.Offset.IsFinite || p.Dashes.Length > 256 || p.Dashes.Any(d => !double.IsFinite(d)))) throw new ArgumentException("Invalid hatch pattern.");

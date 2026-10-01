@@ -47,6 +47,11 @@ public sealed class SkiaDraftRenderer : IDisposable
                 }
                 continue;
             }
+            if (!preview && !highlight && path.VertexColors.Length == 3 && path.Points.Length == 3)
+            {
+                using var colored = SKVertices.CreateCopy(SKVertexMode.Triangles, path.Points.Select(p => Pixel(camera, p)).ToArray(), path.VertexColors.Select(Color).ToArray());
+                _fill.Color = SKColors.White; canvas.DrawVertices(colored, SKBlendMode.Modulate, _fill); continue;
+            }
             using var outline = new SKPath(); outline.MoveTo(Pixel(camera, path.Points[0]));
             for (var i = 1; i < path.Points.Length; i++) outline.LineTo(Pixel(camera, path.Points[i]));
             if (path.Closed) outline.Close();

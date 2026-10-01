@@ -66,7 +66,7 @@ internal static class DxfEntityReader
                     if ((I(attribute, 70) & 1) != 0) continue;
                     children.Add(Read(attribute, warn));
                 }
-                entity = children.Count == 1 ? children[0] : new CompositeEntity("INSERT", children.ToImmutable(), Encode(record)); break;
+                entity = children.Count == 1 && !pieces.Skip(1).Any(r => S(r, 0) == "ATTRIB") ? children[0] : new CompositeEntity("INSERT", children.ToImmutable(), Encode(record)); break;
             case "DIMENSION":
                 var block = S(header, 2);
                 if (block.Length > 0)
@@ -211,7 +211,8 @@ internal static class DxfEntityReader
     {
         var n = I(p, 91); if (n < 1 || n > 1024) throw new FormatException("Invalid hatch loop count.");
         if (I(p, 75) is < 0 or > 2) throw new FormatException("Invalid hatch island style.");
-        if (I(p, 450) != 0) throw new NotSupportedException("Gradient hatches require gradient rendering.");
+        var gradient = DxfHatchGradient.Read(p);
+        if (gradient != null) warn("Gradient HATCH data is retained natively; nonlinear color profiles are approximated for display.");
         var elevation = N(p, 30); var loops = ImmutableArray.CreateBuilder<ImmutableArray<PolyVertex>>();
         var index = Index(p, 91) + 1; var sampled = false;
         for (var path = 0; path < n; path++)
@@ -280,7 +281,7 @@ internal static class DxfEntityReader
         var solid = I(p, 70) != 0;
         if (!solid && (patterns.Count == 0 || patterns.Count != I(p, 78))) throw new FormatException("Hatch pattern definitions are incomplete.");
         if (sampled) warn("Curved edge-list HATCH boundaries are tessellated for editing; unchanged DXF retains the original analytic boundary.");
-        return new(loops.ToImmutable(), solid, patterns.ToImmutable(), S(p, 2, "SOLID"), sampled) { IslandStyle = I(p, 75) };
+        return new(loops.ToImmutable(), solid, patterns.ToImmutable(), S(p, 2, "SOLID"), sampled) { IslandStyle = I(p, 75), Gradient = gradient };
     }
 
     internal static IEnumerable<ImmutableArray<DxfPair>> LogicalRecords(ImmutableArray<DxfPair> pairs)
