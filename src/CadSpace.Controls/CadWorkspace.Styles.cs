@@ -8,6 +8,7 @@ public sealed partial class CadWorkspace
     private bool _styleDialog;
     private async void OnStyleRequested(string command)
     {
+        if (command == "DIMENSIONEDITOR") { ShowDimensionEditor(); return; }
         if (command is "TEXTEDITOR" or "ATTRIBUTEEDITOR") { ShowAnnotationEditor(); return; }
         if (command == "POLYLINEEDITOR") { ShowPolylineEditor(); return; }
         if (command is not ("LAYER" or "LINETYPE") || _session == null || XamlRoot == null || _styleDialog) return;
