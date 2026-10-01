@@ -22,6 +22,7 @@ public sealed class CadPalette : UserControl
     public event Action<string>? InsertRequested;
     public event Action? AnnotationEditRequested;
     public event Action? DimensionEditRequested;
+    public event Action? SplineEditRequested;
     public CadPalette()
     {
         var root = CadTheme.Grid(33, -1); root.Background = CadTheme.Brush(CadTheme.Background);
@@ -88,6 +89,12 @@ public sealed class CadPalette : UserControl
         _body.Children.Add(CadTheme.Text("Linetype", 11, CadTheme.Muted)); _body.Children.Add(lineTypes);
         if (selected.Length != 1) return;
         var entity = selected[0];
+        if (SplineEditing.Unwrap(entity) is { } spline)
+        {
+            Field("Degree", spline.Degree.ToString(CultureInfo.InvariantCulture));
+            Field("Control points", spline.ControlPoints.Length.ToString(CultureInfo.InvariantCulture));
+            if (editable) _body.Children.Add(CadUi.TextButton("Spline Editor…", () => SplineEditRequested?.Invoke(), "properties.spline"));
+        }
         if (DimensionGeometry.Unwrap(entity) is { } dimension)
         {
             Field("Dimension", dimension.Type.ToString());

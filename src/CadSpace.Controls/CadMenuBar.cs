@@ -14,7 +14,7 @@ public sealed class CadMenuBar : StackPanel
         Add("Edit", ["UNDO", "REDO", "-", "ERASE", "SELECTALL", "QSELECT", "SELECTSIMILAR"]);
         Add("View", ["TOP", "3DORBIT", "ZOOM", "-", "PROPERTIES", "TOOLPALETTES", "RIBBON", "RIBBONCLOSE", "CLEANSCREENON", "CLEANSCREENOFF"]);
         Add("Draw", ["LINE", "PLINE", "CIRCLE", "ARC", "RECTANG", "POLYGON", "DONUT", "ELLIPSE", "SPLINE", "3DPOLY", "POINT", "HATCH", "TEXT", "MTEXT"]);
-        Add("Modify", ["MOVE", "COPY", "ROTATE", "SCALE", "MIRROR", "OFFSET", "-", "TRIM", "EXTEND", "FILLET", "CHAMFER", "STRETCH", "PEDIT", "JOIN", "MATCHPROP", "DDEDIT", "EATTEDIT", "EXPLODE"]);
+        Add("Modify", ["MOVE", "COPY", "ROTATE", "SCALE", "MIRROR", "OFFSET", "-", "TRIM", "EXTEND", "FILLET", "CHAMFER", "STRETCH", "PEDIT", "SPLINEDIT", "JOIN", "MATCHPROP", "DDEDIT", "EATTEDIT", "EXPLODE"]);
         Add("Dimension", ["DIMLINEAR", "DIMALIGNED", "DIMROTATED", "DIMANGULAR", "DIMANGULAR2", "DIMRADIUS", "DIMDIAMETER", "DIMORDINATE", "DIMEDIT"]);
         Add("Tools", ["LAYER", "LINETYPE", "BLOCK", "INSERT", "-", "DIST", "AREA", "OPTIONS"]);
         Add("Help", ["HELP", "ABOUT"]);
