@@ -67,7 +67,7 @@ See [line-editing details and boundaries](LINE-EDITING.md). Modification errors 
 | PERSPECTIVE | PERSPECTIVE | 1 perspective, 0 orthographic. |
 | CLIP3D | CLIP3D | x,y,z,nx,ny,nz or OFF; retains normal·(point-origin) <= 0, uncapped display only. |
 
-The complete registry has **91 commands**. EXPLODE handles analytic bulged-polyline segments as arcs. SelectAll is limited to visible entities of the active layout. Mesh tools do not imply ACIS/B-rep or every AutoCAD option.
+The complete registry has **92 commands**. EXPLODE handles analytic bulged-polyline segments as arcs. SelectAll is limited to visible entities of the active layout. Mesh tools do not imply ACIS/B-rep or every AutoCAD option.
 
 Tab accepts completion in an idle command box; F2 expands history, F12 toggles dynamic input, and Ctrl+1 toggles Properties. Snap options expose per-mode choices including line intersections/perpendiculars and circle/arc tangents. Browser shortcuts may take precedence.
 
@@ -136,3 +136,5 @@ Hold Ctrl to keep a dragged palette floating near an edge. Escape cancels palett
 ## Native dimension workflows
 
 DIMLINEAR/DIMROTATED, DIMANGULAR/DIMANGULAR2, DIMRADIUS/DIMDIAMETER, DIMORDINATE and DIMEDIT supplement DIMALIGNED. The shared editor, native subtype export and exact input/formatting boundaries are documented in [Native dimensions](DIMENSIONS.md).
+
+`SPLINEDIT` (`SPE`) opens the indexed control-point/weight and knot editor for one selected or picked spline. Each Apply/Insert is one Undo step; Close does not revert earlier edits. Periodic seams are read only. See [spline editing](SPLINES.md).

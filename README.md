@@ -44,9 +44,11 @@ Imported MTEXT content/height edits now preserve their native source metadata. N
 
 All seven standard DIMENSION subtypes now have typed definitions, shared 2D/3D geometry, supported grip/formatting edits, and native ASCII/binary export with anonymous pictures and DIMSTYLE references. The Annotate/contextual ribbons, classic Dimension menu, Properties and double-click editor use the same engine. Original imported pictures remain until a definition changes. See [native dimensions, tests and exact limits](docs/DIMENSIONS.md).
 
+`SPLINEDIT` (`SPE`) adds indexed control-point/weight editing and rational knot insertion that preserves the curve up to floating-point rounding. Supported control-only DXF records retain application data, XDATA and tolerances. See [spline editing and source-data limits](docs/SPLINES.md).
+
 ## Drafting, modeling and interchange
 
-The engine exposes **91 command workflows**, including UI commands. Names do not imply every AutoCAD option. See the [command reference](docs/COMMANDS.md).
+The engine exposes **92 command workflows**, including UI commands. Names do not imply every AutoCAD option. See the [command reference](docs/COMMANDS.md).
 
 | Area | Implemented scope |
 | --- | --- |
@@ -384,6 +386,7 @@ python tests/fixtures/generate.py
 python tests/fixtures/editing.py
 python tests/fixtures/mtext.py
 python tests/fixtures/dimensions.py
+python tests/fixtures/splines.py
 
 dotnet run --project tests/CadSpace.Tests -c Release
 dotnet run --project tests/CadSpace.Exchange.Tests -c Release
@@ -392,9 +395,10 @@ dotnet run --project tests/CadSpace.Advanced.Tests -c Release
 dotnet run --project tests/CadSpace.Performance.Tests -c Release
 dotnet run --project tests/CadSpace.Editing.Tests -c Release
 dotnet run --project tests/CadSpace.Dimension.Tests -c Release
+dotnet run --project tests/CadSpace.Spline.Tests -c Release
 ```
 
-The original five suites contain **334 headless regressions**; `tests/CadSpace.Editing.Tests` adds **105 editing and record-safety checks**, plus **64 native-dimension checks**, for **503 total**. CI independently audits tested ASCII/binary geometry, styles and widths with zero errors/repairs required; builds Windows/macOS/Linux; packages all libraries; publishes trimmed WebAssembly; and runs real rendered-browser interaction checks. Screenshots, console logs and native checkpoints are retained as artifacts. Current-main builds deploy to GitHub Pages and verify the served commit. Release runs for `v*` tags or a supplied manual version: it repeats the release tests, publishes self-contained single-file desktop executables for Windows, macOS and Linux (x64 and arm64), packs all six libraries with symbols, archives browser/source distributions and emits `SHA256SUMS.txt`. Tags attach the assets to a GitHub Release and publish the packages to NuGet.org with [Trusted Publishing](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing) (OIDC, no stored API key) from the protected `nuget` environment; manual runs are dry runs that only upload workflow artifacts. Signing and notarization are not automatic.
+The original five suites contain **334 headless regressions**; `tests/CadSpace.Editing.Tests` adds **105 editing and record-safety checks**, plus **64 native-dimension checks**, plus **38 spline checks**, for **541 total**. CI independently audits tested ASCII/binary geometry, styles and widths with zero errors/repairs required; builds Windows/macOS/Linux; packages all libraries; publishes trimmed WebAssembly; and runs real rendered-browser interaction checks. Screenshots, console logs and native checkpoints are retained as artifacts. Current-main builds deploy to GitHub Pages and verify the served commit. Release runs for `v*` tags or a supplied manual version: it repeats the release tests, publishes self-contained single-file desktop executables for Windows, macOS and Linux (x64 and arm64), packs all six libraries with symbols, archives browser/source distributions and emits `SHA256SUMS.txt`. Tags attach the assets to a GitHub Release and publish the packages to NuGet.org with [Trusted Publishing](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing) (OIDC, no stored API key) from the protected `nuget` environment; manual runs are dry runs that only upload workflow artifacts. Signing and notarization are not automatic.
 
 Software-backed Chromium is not physical-GPU, accessibility or Autodesk interoperability qualification. Uno's host still uses framebuffer readback through a pinned RGBA adapter, **not zero-copy WebGPU/Vulkan**. Analytic solids, full typography/dynamic blocks/constraints, paper-space viewports/plotting and complete UI/API parity remain substantial work. Read the [coverage matrix](docs/FEATURES.md).
 
