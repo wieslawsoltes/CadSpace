@@ -7,7 +7,7 @@ using CadSpace.Model;
 namespace CadSpace.Dxf;
 
 /// <summary>Bounded source-record edits. Application groups and XDATA are not treated as entity geometry.</summary>
-internal static class DxfRecordEditing
+internal static partial class DxfRecordEditing
 {
     // This view is for interpretation only. The original pairs remain the provenance/export source.
     public static ImmutableArray<DxfPair> SemanticPairs(ImmutableArray<DxfPair> pairs)
@@ -39,6 +39,8 @@ internal static class DxfRecordEditing
     {
         text = "";
         if (after.Id != before.Id || after.Handle != before.Handle || after is OpaqueEntity || raw.IsDefaultOrEmpty) return false;
+        if (after is SplineEntity spline && before is SplineEntity originalSpline && !SplineGeometryEqual(spline, originalSpline))
+            return TryWriteSpline(spline, originalSpline, raw, warn, out text);
         var styleOnly = WithoutStyleChanges(after, before) == before;
         var records = DxfEntityReader.Records(raw).ToArray();
         if (records.Length == 0) return false;

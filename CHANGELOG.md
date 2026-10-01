@@ -1,5 +1,12 @@
 # Changelog
 
+## Rational spline editing (unreleased)
+
+- Added SPLINEDIT/SPE, reusable indexed control-point/weight editing and curve-preserving interior knot insertion.
+- Integrated Properties, contextual/Modify ribbons, classic menus and 2D double-click with the shared command/session engine.
+- Supported control-only SPLINE edits preserve native knots/weights/points, application data, XDATA and unedited fields. Fit/tangent or incompatible plane semantics use explicit conversion warnings.
+- Added 38 headless tests (541 total), four independent spline audits (30 export audits total) and a rendered-browser editing/download/reimport workflow. See docs/SPLINES.md for limits.
+
 ## Native dimensions (unreleased)
 
 - Added seven typed DIMENSION subtypes with native ASCII/binary definition, DIMSTYLE and anonymous-picture export; retained imported pictures until definition edits.

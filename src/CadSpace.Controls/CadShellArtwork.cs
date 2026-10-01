@@ -55,7 +55,7 @@ internal static class CadShellArtwork
             case "PERSPECTIVE": L(4, 6, 28, 11); L(28, 11, 28, 23); L(28, 23, 4, 28); L(4, 28, 4, 6); L(16, 9, 16, 26); break;
             case "CLIP3D": R(6, 7, 20, 20); p.Color = new SKColor(227, 189, 109); L(2, 23, 30, 9); break;
             case "ELLIPSE": canvas.DrawOval(new SKRect(3, 8, 29, 24), p); break;
-            case "SPLINE": using (var path = new SKPath()) { path.MoveTo(2, 27); path.CubicTo(10, -3, 22, 37, 30, 4); canvas.DrawPath(path, p); } break;
+            case "SPLINEDIT": case "SPLINE": using (var path = new SKPath()) { path.MoveTo(2, 27); path.CubicTo(10, -3, 22, 37, 30, 4); canvas.DrawPath(path, p); } break;
             case "3DPOLY": case "PEDIT": case "PLINEWID": L(3, 27, 10, 7); L(10, 7, 21, 19); L(21, 19, 28, 4); R(7, 4, 6, 6); R(18, 16, 6, 6); break;
             case "TRIM": L(9, 2, 9, 29); L(23, 2, 23, 29); L(2, 16, 9, 16); L(23, 16, 30, 16); break;
             case "EXTEND": L(26, 2, 26, 30); L(3, 17, 25, 17); Arrow(15, 17); break;

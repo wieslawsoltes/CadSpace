@@ -127,7 +127,7 @@ public sealed class CadRibbon : UserControl
                 var blocks = new CadRibbonPanel("Block"); blocks.Items.Children.Add(new CadRibbonButton("INSERT", Invoke, "BLOCK", "EXPLODE")); _groups.Children.Add(blocks);
                 var properties = new CadRibbonPanel("Properties", () => Invoke("PROPERTIES")); properties.Items.Children.Add(_properties); _groups.Children.Add(properties);
                 var utilities = new CadRibbonPanel("Utilities"); utilities.Items.Children.Add(new CadRibbonButton("DIST", Invoke, "AREA")); Small(utilities, "QSELECT", "SELECTSIMILAR", "SELECTALL"); _groups.Children.Add(utilities); break;
-            case "Modify": Group("Transform", "MOVE", "COPY", "ROTATE", "SCALE", "MIRROR", "STRETCH"); Group("Edit", "TRIM", "EXTEND", "FILLET", "CHAMFER", "BREAK", "JOIN"); Group("Polyline", "PEDIT", "PLINEWID"); Group("Properties", "MATCHPROP"); Group("Pattern", "OFFSET", "ARRAY", "EXPLODE", "ERASE"); break;
+            case "Modify": Group("Transform", "MOVE", "COPY", "ROTATE", "SCALE", "MIRROR", "STRETCH"); Group("Edit", "TRIM", "EXTEND", "FILLET", "CHAMFER", "BREAK", "JOIN"); Group("Curves", "PEDIT", "SPLINEDIT", "PLINEWID"); Group("Properties", "MATCHPROP"); Group("Pattern", "OFFSET", "ARRAY", "EXPLODE", "ERASE"); break;
             case "Insert": Group("Blocks", "INSERT", "BLOCK", "EATTEDIT", "EXPLODE"); Group("Pattern", "ARRAY"); Group("Content", "TOOLPALETTES", "OPEN"); break;
             case "Annotate": Group("Text", "TEXT", "MTEXT", "DDEDIT"); Group("Dimensions", "DIMLINEAR", "DIMALIGNED", "DIMROTATED", "DIMANGULAR", "DIMANGULAR2", "DIMRADIUS", "DIMDIAMETER", "DIMORDINATE", "DIMEDIT"); Group("Hatching", "HATCH"); break;
             case "Layout": Group("Layouts", "LAYOUT_NEW", "LAYOUT_RENAME", "LAYOUT_DELETE"); Group("View", "TOP", "ZOOM"); break;
@@ -136,6 +136,7 @@ public sealed class CadRibbon : UserControl
             case "Manage": Group("Drawing", "LAYER", "LINETYPE", "QSELECT"); Group("Workspace", "OPTIONS", "RENDERSTATS", "UISTATS"); Group("Recovery", "RECOVER"); break;
             case "Output": Group("Native Project", "SAVE"); Group("Interchange", "EXPORT", "EXPORT_BINARY"); break;
             case "Polyline": Group("Polyline", "PEDIT", "JOIN", "PLINEWID", "STRETCH", "EXPLODE"); Group("Modify", "MOVE", "COPY", "SCALE", "ERASE"); break;
+            case "Spline": Group("Spline", "SPLINEDIT", "SPLINE"); Group("Edit", "MOVE", "COPY", "ROTATE", "SCALE", "ERASE"); break;
             case "Dimension": Group("Dimensions", "DIMEDIT", "DIMLINEAR", "DIMALIGNED", "DIMANGULAR", "DIMRADIUS", "DIMDIAMETER", "DIMORDINATE"); Group("Edit", "MOVE", "COPY", "ERASE"); break;
             case "Mesh": Group("Mesh", "UNION", "SUBTRACT", "INTERSECT", "ROTATE3D", "MIRROR3D"); Group("View", "3DORBIT", "ZOOM"); break;
             default: Group("Selection", "MOVE", "COPY", "ERASE", "SELECTSIMILAR", "PROPERTIES"); break;
