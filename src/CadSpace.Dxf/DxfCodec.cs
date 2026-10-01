@@ -39,6 +39,7 @@ public static class DxfCodec
         if (sections.GroupBy(s => s.Name).Any(g => g.Count() > 1)) throw new FormatException("Duplicate DXF sections are not supported.");
         var state = Drawing.Empty with { Name = name };
         var warnings = ImmutableArray.CreateBuilder<string>();
+        var dimensionStyles = DxfDimensions.Styles(sections.FirstOrDefault(s => s.Name == "TABLES")?.Pairs ?? []);
         var sourceRecords = ImmutableDictionary.CreateBuilder<Guid, ImmutableArray<DxfPair>>();
         state = DxfLinetypes.Read(state, sections.FirstOrDefault(s => s.Name == "TABLES")?.Pairs ?? [], sections.FirstOrDefault(s => s.Name == "HEADER")?.Pairs ?? [], warnings.Add);
         foreach (var record in Records(sections.FirstOrDefault(s => s.Name == "TABLES")?.Pairs ?? []))
@@ -67,7 +68,9 @@ public static class DxfCodec
             var type = Type(record); Entity entity;
             try
             {
-                entity = DxfEntityReader.Read(DxfRecordEditing.SemanticPairs(record), warnings.Add);
+                entity = type == "DIMENSION"
+                    ? DxfDimensions.Read(DxfRecordEditing.SemanticPairs(record), record, dimensionStyles, warnings.Add)
+                    : DxfEntityReader.Read(DxfRecordEditing.SemanticPairs(record), warnings.Add);
                 if (entity is OpaqueEntity opaqueSource) entity = opaqueSource with { RawRecord = Encode(record) };
                 if (entity is CompositeEntity compoundSource && compoundSource.SourceRecord.Length > 0)
                     entity = compoundSource with { SourceRecord = Encode(record) };
@@ -126,13 +129,21 @@ public static class DxfCodec
             if (ulong.TryParse(entity.Handle, NumberStyles.HexNumber, Culture, out var value)) handle = Math.Max(handle, value);
         string NewHandle() => checked(++handle).ToString("X", Culture);
         var originals = source?.Original.Entities.Concat(source.Original.Blocks.Values.SelectMany(b => b.Entities)).ToDictionary(e => e.Id) ?? new();
+        var dimensions = new DxfDimensions.Exporter(drawing, source, NewHandle, warnings.Add);
+        var emitted = new Dictionary<Entity, string>(ReferenceEqualityComparer.Instance);
         string Emit(Entity entity)
+        {
+            if (!emitted.TryGetValue(entity, out var text)) emitted[entity] = text = EmitCore(entity);
+            return text;
+        }
+        string EmitCore(Entity entity)
         {
             if (source != null && originals.TryGetValue(entity.Id, out var original) && entity == original && source.Records.TryGetValue(entity.Id, out var raw)) return Encode(raw);
             if (source != null && originals.TryGetValue(entity.Id, out var prior) && source.Records.TryGetValue(entity.Id, out var retained)
                 && (DxfAttributeEditing.TryWrite(entity, prior, retained, warnings.Add, out var patched)
                     || DxfRecordEditing.TryWrite(entity, prior, retained, warnings.Add, out patched))) return patched;
             if (entity is OpaqueEntity opaque) return opaque.RawRecord;
+            if (DimensionGeometry.Unwrap(entity) != null) return dimensions.Write(entity);
             var buffer = new StringBuilder();
             void Pair(int code, object value) => buffer.Append(code.ToString(Culture)).Append('\n').Append(Convert.ToString(value, Culture)).Append('\n');
             void Position(int code, Vec3 p) { Pair(code, p.X); Pair(code + 10, p.Y); Pair(code + 20, p.Z); }
@@ -166,21 +177,15 @@ public static class DxfCodec
                     Pair(1, text.Text.Replace("\r", "").Replace("\n", text.Multiline ? "\\P" : " ")); Pair(50, text.Multiline ? GeometryMath.Radians(text.Rotation) : text.Rotation);
                     if (text.Multiline) { Pair(41, 0); Pair(71, 1); } else Pair(100, "AcDbText"); break;
                 case BlockReferenceEntity insert: Start("INSERT", "AcDbBlockReference"); Pair(2, insert.Name); Position(10, insert.Position); Pair(41, insert.Scale.X); Pair(42, insert.Scale.Y); Pair(43, insert.Scale.Z); Pair(50, insert.Rotation); break;
-                case DimensionEntity:
-                    warnings.Add($"{entity.Kind} is exported as display geometry; its CadSpace editing semantics are not retained in DXF.");
-                    var scene = EntityGeometry.BuildScene(drawing with { Entities = [entity] }, entity.Layout);
-                    foreach (var path in scene.Paths)
-                    {
-                        if (path.Points.Length >= 2) buffer.Append(Emit(PolylineEntity.FromPoints(path.Points, path.Closed) with { Layer = entity.Layer, ColorIndex = entity.ColorIndex, TrueColor = entity.TrueColor, Layout = entity.Layout, Visible = entity.Visible }));
-                    }
-                    foreach (var label in scene.Texts) buffer.Append(Emit(new TextEntity(label.Position, label.Text, label.Height, label.Rotation) { Layer = entity.Layer, TrueColor = label.Color, Layout = entity.Layout, Visible = entity.Visible }));
-                    break;
                 default: throw new NotSupportedException($"Export of {entity.Kind} is not implemented.");
             }
             if (source != null && source.Records.ContainsKey(entity.Id)) warnings.Add($"Edited {entity.Kind} {entity.Handle}: unmodeled per-entity metadata is not retained. Keep the original DXF.");
             return buffer.ToString();
         }
-        var text = DxfDocumentWriter.Write(drawing, source, Emit, NewHandle);
+        // Discover generated dimension pictures/styles before the document writer allocates ownership tables.
+        foreach (var entity in drawing.Entities.Concat(drawing.Blocks.Values.SelectMany(b => b.Entities))) Emit(entity);
+        var exportDrawing = dimensions.Blocks.Count == 0 ? drawing : drawing with { Blocks = drawing.Blocks.SetItems(dimensions.Blocks) };
+        var text = DxfDocumentWriter.Write(exportDrawing, source, Emit, NewHandle, dimensions.StyleRecords);
         return new(text, warnings.Distinct().ToImmutableArray());
     }
     public static ImmutableArray<DxfPair> ParsePairs(string text)

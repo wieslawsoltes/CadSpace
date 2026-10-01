@@ -12,9 +12,9 @@ This matrix describes implemented behavior, not full AutoCAD parity. Opaque byte
 | Blocks | Nested definitions/base points/placements, supported attributed/array INSERT display children | Dynamic actions/constraints, full attribute editor, xref lifecycle and all array semantics |
 | Linetypes | Simple signed dash/gap/dot definitions, ByLayer/ByBlock resolution, object/global scales, DXF LTYPE/6/48/LTSCALE and 2D/3D polyline generation flags, continuous spline phase, native persistence | SHX/text/shape patterns, exact curve arclength/endpoint fitting, every affine/insert/plot/paper-space scale convention; complex source styles remain noneditable display fallbacks |
 | Typography | Plain TEXT/MTEXT, width/oblique transforms, OCS/world-plane rendering; MTEXT radians/final orientation precedence | SHX, complete font/style substitution, every alignment/MTEXT grammar/column, shaping and annotative-text qualification |
-| Annotations | Aligned dimensions, anonymous dimension-block display, LEADER vertex paths | Associative styles/constraints, native authored DIMENSION/MLEADER/TABLE parity |
+| Annotations | Seven standard native dimension subtypes, retained/regenerated pictures, decimal formatting, LEADER vertex paths | Associative styles/constraints, all DIMSTYLE/association options, MLEADER/TABLE parity |
 | Structure | Entity visibility, model/paper-space separation, layout selector, supported ownership/block-record/layout dictionaries | Embedded paper-space model VIEWPORTs, sheet authoring, plotting/styles and exhaustive dependency repair |
-| Drafting | 83 commands; line-based trim/extend/fillet/chamfer/join/break, transforms, arrays, bulge explode, bounded crossing STRETCH and immutable grip edits, undo/redo | Complete multifunction/subobject grips, every STRETCH selection/deformation option, arbitrary UCS editing, every command option and AutoCAD API/plugin compatibility |
+| Drafting | 91 commands; line-based trim/extend/fillet/chamfer/join/break, transforms, arrays, bulge explode, bounded crossing STRETCH and immutable grip edits, undo/redo | Complete multifunction/subobject grips, every STRETCH selection/deformation option, arbitrary UCS editing, every command option and AutoCAD API/plugin compatibility |
 | Snaps | Indexed nested/OCS endpoints/midpoints/centers/quadrants, line intersections/perpendiculars, circle/arc tangents, nearest closure | Every curve intersection/tangent/perpendicular combination, extension tracking and fully screen-space 3D/UCS snap behavior |
 | Modeling | Primitives/extrusion/revolved surfaces, capped matching-profile polygon loft, parallel-transport sweep, bounded mesh Booleans | Analytic B-rep/ACIS topology, industrial solid fillets/chamfers/shelling, general NURBS surfaces, full self-intersection/manufacturing certification |
 | UI | Application menu, Quick Access/search, dense contextual ribbon with property selectors, document/layout tabs, resizable command history, docked/floating/auto-hide palettes, searchable Tool Palettes, synchronized ViewCube/navigation, existing selection/grips and Layer/Linetype managers | Pixel-exact AutoCAD UI, detached native windows, arbitrary palette split/tab groups, CUI customization, Sheet Set Manager, custom tool catalog authoring, complete touch/accessibility parity |
@@ -45,7 +45,7 @@ Browser checkpoints use acknowledged IndexedDB transactions; the published appli
 
 ## Qualification
 
-439 headless tests include independent synthetic DXF fixtures, native persistence/provenance, Booleans, projection/picking, spatial-index equivalence, modeling, snapping, completion, whole-root windows, grip transactions, STRETCH, Quick Select, recovery failure fallback, style exchange, mixed-scale assignments, continuous spline/polyline patterns, large-coordinate guards and randomized clipped-stroke comparison. CI independently audits canonical ASCII/binary geometry and style exports.
+503 headless tests include independent synthetic DXF fixtures, native persistence/provenance, Booleans, projection/picking, spatial-index equivalence, modeling, snapping, completion, whole-root windows, grip transactions, STRETCH, Quick Select, recovery failure fallback, style exchange, mixed-scale assignments, continuous spline/polyline patterns, large-coordinate guards and randomized clipped-stroke comparison. CI independently audits canonical ASCII/binary geometry and style exports.
 
 Published-browser checks exercise actual mesh/dash pixels, upload/invalidation counters, grips, recovery, compiled layer cells, manager view preservation and UI layer edits inspected through real native checkpoints. Passing these does not imply every interaction has been qualified.
 
@@ -67,3 +67,7 @@ See [Workspace controls](WORKSPACE.md) for application/Quick Access/search, ribb
 ## Multiline text increment
 
 [MTEXT](MTEXT.md) covers source-preserving content/height changes, Unicode chunking, placed native output and staged formatting. Rich-text layout, arbitrary affine glyph export, automatic association/cache regeneration and full AutoCAD parity remain outside these changes.
+
+## Native dimensions
+
+See [Native dimensions](DIMENSIONS.md) for definition/OCS support, source pictures, anonymous block/style export, formatting controls, native v3 and compatibility tests. Full style fitting, annotative/associative semantics and every command option remain outside this increment.

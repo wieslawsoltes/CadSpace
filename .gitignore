@@ -9,3 +9,7 @@ TestResults/
 .DS_Store
 tests/fixtures/independent-*.dxf
 tests/fixtures/independent.zip
+
+# Python test tooling
+__pycache__/
+*.pyc

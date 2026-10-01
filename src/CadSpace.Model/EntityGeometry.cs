@@ -25,7 +25,7 @@ public static class EntityGeometry
         LineEntity l => [l.Start, l.End], PointEntity p => [p.Position], CircleEntity c => [c.Center],
         ArcEntity a => [a.Center], EllipseEntity l => [l.Center, l.MajorAxis],
         PolylineEntity p => p.Vertices.Select(v => v.Position), TextEntity t => [t.Position],
-        DimensionEntity d => [d.First, d.Second, d.Location], HatchEntity h => h.Boundary,
+        DimensionEntity d => DimensionGeometry.Points(d), HatchEntity h => h.Boundary,
         MeshEntity m => m.Vertices, BlockReferenceEntity b => [b.Position], _ => AdvancedGeometry.Anchors(e)
     };
     public static uint AciColor(int index)
@@ -137,12 +137,10 @@ public static class EntityGeometry
                     Path(Enumerable.Range(0, 257).Select(i => ellipse.Center + ellipse.MajorAxis * Math.Cos(ellipse.StartParameter + sweep * i / 256) + minor * Math.Sin(ellipse.StartParameter + sweep * i / 256)), Math.Abs(sweep - Math.PI * 2) < 1e-8); break;
                 case TextEntity text: Text(text.Position, text.Text.Replace("\\P", "\n"), text.Height, text.Rotation); break;
                 case DimensionEntity dim:
-                    var vector = dim.Second - dim.First; if (vector.Length < 1e-9) break;
-                    var direction = vector.Normalized; var normal = new Vec3(-direction.Y, direction.X);
-                    var offset = (dim.Location - dim.First).Dot(normal); var p1 = dim.First + normal * offset; var p2 = dim.Second + normal * offset;
-                    Path([dim.First, p1 + normal * 4]); Path([dim.Second, p2 + normal * 4]); Path([p1, p2]);
-                    Path([p1 + direction * 7 + normal * 2, p1, p1 + direction * 7 - normal * 2]); Path([p2 - direction * 7 + normal * 2, p2, p2 - direction * 7 - normal * 2]);
-                    Text((p1 + p2) / 2 + normal * 4, vector.Length.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture), 10, GeometryMath.Angle(direction)); break;
+                    if (DimensionGeometry.UsesPicture(dim) && drawing.Blocks.ContainsKey(dim.Picture!.BlockName))
+                        Child(new BlockReferenceEntity(dim.Picture.BlockName, dim.Picture.Insertion, new(1,1,1)), transform);
+                    else foreach (var child in DimensionGeometry.For(dim).Entities) Child(child, transform);
+                    break;
                 case HatchEntity hatch:
                     pattern = null; lineName = "CONTINUOUS";
                     var hatchPattern = ImmutableArray.Create(new HatchPatternLine(hatch.Angle, default, Transform3.RotationZ(hatch.Angle).Vector(new(0, hatch.Spacing)), []));
@@ -163,11 +161,11 @@ public static class EntityGeometry
                         var n = (b - a).Cross(c - a); if (n.Length < 1e-12) continue;
                         triangles.Add(new(root, color, a, b, c));
                         if (triangles.Count > 1000000) throw new ArgumentException("Expanded scene exceeds one million triangles.");
-                        if (mesh.Operation != "Hatch fill") { Edge(ia, ib, n.Normalized); Edge(ib, ic, n.Normalized); Edge(ic, ia, n.Normalized); }
+                        if (mesh.Operation is not ("Hatch fill" or "Dimension arrow")) { Edge(ia, ib, n.Normalized); Edge(ib, ic, n.Normalized); Edge(ic, ia, n.Normalized); }
                     }
                     foreach (var edge in edges.Where(p => p.Value.Count == 1 || p.Value.Crease)) Path([mesh.Vertices[edge.Key.Item1], mesh.Vertices[edge.Key.Item2]]);
                     // Filled regions have an explicit 2D fill, not their internal tessellation edges.
-                    if (mesh.Operation == "Hatch fill") for (var i = 0; i < mesh.Triangles.Length; i += 3) Path([mesh.Vertices[mesh.Triangles[i]], mesh.Vertices[mesh.Triangles[i + 1]], mesh.Vertices[mesh.Triangles[i + 2]]], true, true);
+                    if (mesh.Operation is "Hatch fill" or "Dimension arrow") for (var i = 0; i < mesh.Triangles.Length; i += 3) Path([mesh.Vertices[mesh.Triangles[i]], mesh.Vertices[mesh.Triangles[i + 1]], mesh.Vertices[mesh.Triangles[i + 2]]], true, true);
                     break;
                 case BlockReferenceEntity insert when drawing.Blocks.TryGetValue(insert.Name, out var block):
                     var local = Transform3.Translation(-block.BasePoint).Then(Transform3.Scaling(insert.Scale)).Then(Transform3.RotationZ(insert.Rotation)).Then(Transform3.Translation(insert.Position)).Then(transform);
@@ -199,7 +197,7 @@ public static class EntityGeometry
             PolylineEntity p when xySimilarity => p with { ConstantWidth = p.ConstantWidth * scale, Vertices = p.Vertices.Select(v => v with { Position = transform.Point(v.Position), Bulge = mirror ? -v.Bulge : v.Bulge, StartWidth = v.StartWidth * scale, EndWidth = v.EndWidth * scale }).ToImmutableArray() },
             EllipseEntity e when xySimilarity && !mirror => e with { Center = transform.Point(e.Center), MajorAxis = transform.Vector(e.MajorAxis) },
             TextEntity t when xySimilarity && !mirror => t with { Position = transform.Point(t.Position), Height = t.Height * scale, Rotation = Angle(t.Rotation) },
-            DimensionEntity d when xySimilarity => d with { First = transform.Point(d.First), Second = transform.Point(d.Second), Location = transform.Point(d.Location) },
+            DimensionEntity d when xySimilarity && !mirror && d.Picture == null => DimensionGeometry.TransformPlanar(d, transform),
             HatchEntity h when xySimilarity => h with { Boundary = h.Boundary.Select(transform.Point).ToImmutableArray(), Spacing = h.Spacing * scale, Angle = Angle(h.Angle) },
             BlockReferenceEntity b when xySimilarity && !mirror && Math.Abs(transform.Z.Length - scale) < 1e-7 => b with { Position = transform.Point(b.Position), Scale = b.Scale * scale, Rotation = Angle(b.Rotation) },
             _ => Place()

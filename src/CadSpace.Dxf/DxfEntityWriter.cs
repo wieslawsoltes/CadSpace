@@ -151,6 +151,9 @@ internal static class DxfEntityWriter
             case SplineEntity spline:
                 Start("SPLINE", "AcDbSpline"); Pair(70, (spline.Closed ? 1 : 0) | (spline.Periodic ? 2 : 0) | (spline.Weights.IsEmpty ? 0 : 4)); Pair(71, spline.Degree); Pair(72, spline.Knots.Length); Pair(73, spline.ControlPoints.Length); Pair(74, 0);
                 foreach (var k in spline.Knots) Pair(40, k); foreach (var w in spline.Weights) Pair(41, w); foreach (var p in spline.ControlPoints) Point(10, p); break;
+            case MeshEntity { Operation: "Dimension arrow", Vertices.Length: 3, Triangles.Length: 3 } arrow:
+                Start("SOLID", "AcDbTrace"); Point(10, arrow.Vertices[0]); Point(11, arrow.Vertices[1]);
+                Point(12, arrow.Vertices[2]); Point(13, arrow.Vertices[2]); break;
             case MeshEntity mesh:
                 Start("MESH", "AcDbSubDMesh"); Pair(71, 2); Pair(72, 0); Pair(91, 0); Pair(92, mesh.Vertices.Length);
                 foreach (var vertex in mesh.Vertices) Point(10, vertex);

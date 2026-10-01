@@ -21,6 +21,7 @@ public sealed class CadPalette : UserControl
     public event Action<string>? Message;
     public event Action<string>? InsertRequested;
     public event Action? AnnotationEditRequested;
+    public event Action? DimensionEditRequested;
     public CadPalette()
     {
         var root = CadTheme.Grid(33, -1); root.Background = CadTheme.Brush(CadTheme.Background);
@@ -87,6 +88,12 @@ public sealed class CadPalette : UserControl
         _body.Children.Add(CadTheme.Text("Linetype", 11, CadTheme.Muted)); _body.Children.Add(lineTypes);
         if (selected.Length != 1) return;
         var entity = selected[0];
+        if (DimensionGeometry.Unwrap(entity) is { } dimension)
+        {
+            Field("Dimension", dimension.Type.ToString());
+            Field("Measurement", DimensionGeometry.Measure(dimension).ToString("0.######", CultureInfo.InvariantCulture));
+            if (editable) _body.Children.Add(CadUi.TextButton("Dimension Properties…", () => DimensionEditRequested?.Invoke(), "properties.dimension"));
+        }
         if (editable && TextEditing.IsEditable(entity))
             _body.Children.Add(CadUi.TextButton(entity is CompositeEntity ? "Edit block attributes…" : "Edit text…", () => AnnotationEditRequested?.Invoke(), "properties.annotation"));
         Field("Handle", entity.Handle.Length == 0 ? "New object" : entity.Handle);

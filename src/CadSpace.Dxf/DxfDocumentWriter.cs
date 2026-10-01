@@ -48,7 +48,7 @@ internal static class DxfDocumentWriter
         }
         return output.ToString();
     }
-    public static string Write(Drawing drawing, DxfSource? source, Func<Entity, string> emit, Func<string> next)
+    public static string Write(Drawing drawing, DxfSource? source, Func<Entity, string> emit, Func<string> next, IReadOnlyList<ImmutableArray<DxfPair>>? dimensionStyles = null)
     {
         var sections = source?.Sections ?? [];
         ImmutableArray<DxfPair> Section(string name) => sections.FirstOrDefault(s => s.Name == name)?.Pairs ?? [];
@@ -118,7 +118,9 @@ internal static class DxfDocumentWriter
             var header = oldTables.TryGetValue(name, out var old) ? Set(Set(old.Header, 5, id), 70, values.Count) : Record(0, "TABLE", 2, name, 5, id, 330, "0", 100, "AcDbSymbolTable", 70, values.Count);
             tables.Append(Encode(header)); foreach (var record in values) tables.Append(Encode(Owner(record, id))); tables.Append("0\nENDTAB\n");
         }
-        foreach (var (name, table) in oldTables.Where(t => t.Key is not ("LTYPE" or "LAYER" or "BLOCK_RECORD"))) Table(name, table.Entries);
+        foreach (var (name, table) in oldTables.Where(t => t.Key is not ("LTYPE" or "LAYER" or "BLOCK_RECORD" or "DIMSTYLE"))) Table(name, table.Entries);
+        var dimStyles = Entries("DIMSTYLE").Concat(dimensionStyles ?? []).ToArray();
+        if (dimStyles.Length > 0) Table("DIMSTYLE", dimStyles);
         Table("LTYPE", DxfLinetypes.Write(drawing, source, Entries("LTYPE"), next));
         if (!oldTables.ContainsKey("STYLE")) Table("STYLE", [Record(0, "STYLE", 5, next(), 100, "AcDbSymbolTableRecord", 100, "AcDbTextStyleTableRecord", 2, "Standard", 70, 0, 40, 0, 41, 1, 50, 0, 71, 0, 42, 2.5, 3, "txt", 4, "")]);
         if (!oldTables.ContainsKey("APPID")) Table("APPID", [Record(0, "APPID", 5, next(), 100, "AcDbSymbolTableRecord", 100, "AcDbRegAppTableRecord", 2, "ACAD", 70, 0)]);
@@ -147,7 +149,7 @@ internal static class DxfDocumentWriter
         foreach (var name in names)
         {
             var definition = drawing.Blocks.GetValueOrDefault(name) ?? new BlockDefinition(name, default, []); var origin = definition.BasePoint; var id = blockIds[name];
-            var header = oldBlocks.TryGetValue(name, out var old) ? old.Header : Record(0, "BLOCK", 5, next(), 100, "AcDbEntity", 8, "0", 100, "AcDbBlockBegin", 2, name, 70, 0, 10, 0, 20, 0, 30, 0, 3, name, 1, "");
+            var header = oldBlocks.TryGetValue(name, out var old) ? old.Header : Record(0, "BLOCK", 5, next(), 100, "AcDbEntity", 8, "0", 100, "AcDbBlockBegin", 2, name, 70, name.StartsWith('*') && !layouts.Values.Contains(name, StringComparer.OrdinalIgnoreCase) ? 1 : 0, 10, 0, 20, 0, 30, 0, 3, name, 1, "");
             header = Set(Set(Set(header, 10, origin.X), 20, origin.Y), 30, origin.Z);
             blocks.Append(Encode(Owner(header, id)));
             foreach (var entity in definition.Entities) blocks.Append(Owned(emit(entity), id));
