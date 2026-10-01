@@ -101,7 +101,7 @@ public sealed class DrawingSceneCache
     }
     private static (string[] Layers, string[] Blocks, string[] Types) Dependencies(Entity root, Drawing drawing)
     {
-        if (root is not (BlockReferenceEntity or PlacedEntity or CompositeEntity))
+        if (root is not (BlockReferenceEntity or PlacedEntity or CompositeEntity or DimensionEntity))
             return ([root.Layer], [], [Linetype.ResolveName(root.Linetype, drawing.LayerFor(root))]);
         var layers = new HashSet<string>(StringComparer.OrdinalIgnoreCase); var blocks = new HashSet<string>(StringComparer.OrdinalIgnoreCase); var types = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         void Visit(Entity e, string? inheritedLayer, string? inheritedType, int depth)
@@ -113,6 +113,8 @@ public sealed class DrawingSceneCache
             var type = Linetype.ResolveName(e.Linetype, layer, inheritedType); types.Add(type);
             if (e is PlacedEntity placed) Visit(placed.Geometry, layerName, type, depth + 1);
             else if (e is CompositeEntity composite) foreach (var child in composite.Children) Visit(child, layerName, type, depth + 1);
+            else if (e is DimensionEntity d && DimensionGeometry.UsesPicture(d))
+                Visit(new BlockReferenceEntity(d.Picture!.BlockName, d.Picture.Insertion, new(1,1,1)), layerName, type, depth + 1);
             else if (e is BlockReferenceEntity insert)
             {
                 blocks.Add(insert.Name);

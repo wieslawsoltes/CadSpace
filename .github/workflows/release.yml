@@ -50,6 +50,7 @@ jobs:
           python tests/fixtures/generate.py
           python tests/fixtures/editing.py
           python tests/fixtures/mtext.py
+          python tests/fixtures/dimensions.py
       - run: dotnet run --project tests/CadSpace.Tests -c Release
       - run: dotnet run --project tests/CadSpace.Exchange.Tests -c Release
       - run: dotnet run --project tests/CadSpace.Persistence.Tests -c Release
@@ -67,6 +68,8 @@ jobs:
           dotnet run --project tests/CadSpace.Editing.Tests -c Release
           python tests/fixtures/editing.py artifacts/editing-audit
           python tests/fixtures/mtext.py artifacts/editing-audit
+          CADSPACE_DIMENSION_OUTPUT=artifacts/dimension-audit dotnet run --project tests/CadSpace.Dimension.Tests -c Release
+          python tests/fixtures/dimensions.py artifacts/dimension-audit
 
   desktop:
     name: Desktop (${{ matrix.rid }})

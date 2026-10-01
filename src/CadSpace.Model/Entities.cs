@@ -36,7 +36,20 @@ public sealed record PolylineEntity(ImmutableArray<PolyVertex> Vertices, bool Cl
 }
 public sealed record EllipseEntity(Vec3 Center, Vec3 MajorAxis, double Ratio, double StartParameter = 0, double EndParameter = Math.PI * 2) : Entity { public override string Kind => "ELLIPSE"; }
 public sealed record TextEntity(Vec3 Position, string Text, double Height = 12, double Rotation = 0, bool Multiline = false) : Entity { public override string Kind => Multiline ? "MTEXT" : "TEXT"; }
-public sealed record DimensionEntity(Vec3 First, Vec3 Second, Vec3 Location) : Entity { public override string Kind => "DIMENSION"; }
+/// <summary>Local-plane definitions; placed wrappers supply arbitrary OCS planes.</summary>
+public sealed record DimensionEntity(Vec3 First, Vec3 Second, Vec3 Location) : Entity
+{
+    public override string Kind => "DIMENSION";
+    public DimensionKind Type { get; init; } = DimensionKind.Aligned;
+    public Vec3 Third { get; init; }
+    public Vec3 Fourth { get; init; }
+    public double Rotation { get; init; }
+    public bool OrdinateX { get; init; } = true;
+    public string TextOverride { get; init; } = "";
+    public Vec3? TextPosition { get; init; }
+    public DimensionFormat Format { get; init; } = DimensionFormat.Default;
+    public DimensionPicture? Picture { get; init; }
+}
 public sealed record HatchEntity(ImmutableArray<Vec3> Boundary, double Spacing = 10, double Angle = 45, bool Solid = false) : Entity { public override string Kind => "HATCH"; }
 public sealed record MeshEntity(ImmutableArray<Vec3> Vertices, ImmutableArray<int> Triangles, string Operation = "Mesh") : Entity { public override string Kind => "MESH"; }
 public sealed record BlockReferenceEntity(string Name, Vec3 Position, Vec3 Scale, double Rotation = 0) : Entity { public override string Kind => "INSERT"; }

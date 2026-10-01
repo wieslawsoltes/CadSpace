@@ -9,7 +9,7 @@ namespace CadSpace.Dxf;
 public sealed record CadProjectReadResult(Drawing Drawing, DxfSource? DxfSource);
 
 /// <summary>Versioned, lossless native persistence for the implemented document model. No reflection or executable payloads.</summary>
-public static class CadProjectCodec
+public static partial class CadProjectCodec
 {
     public const int MaximumCharacters = 128 * 1024 * 1024;
     public static string Write(Drawing drawing, DxfSource? source = null)
@@ -18,7 +18,7 @@ public static class CadProjectCodec
         using var memory = new MemoryStream();
         using (var writer = new Utf8JsonWriter(memory, new JsonWriterOptions { Indented = true }))
         {
-            writer.WriteStartObject(); writer.WriteString("format", "CadSpace"); writer.WriteNumber("version", 2);
+            writer.WriteStartObject(); writer.WriteString("format", "CadSpace"); writer.WriteNumber("version", HasNativeDimensions(drawing) || source != null && HasNativeDimensions(source.Original) ? 3 : 2);
             writer.WritePropertyName("drawing"); WriteDrawing(writer, drawing);
             if (source != null)
             {
@@ -41,7 +41,7 @@ public static class CadProjectCodec
         if (text.Length > MaximumCharacters) throw new FormatException("Native project exceeds the 128 Mi-character read limit.");
         using var document = JsonDocument.Parse(text, new JsonDocumentOptions { MaxDepth = 128 });
         var root = document.RootElement;
-        if (root.GetProperty("format").GetString() != "CadSpace" || root.GetProperty("version").GetInt32() is not (1 or 2)) throw new FormatException("Unsupported CadSpace project format/version.");
+        if (root.GetProperty("format").GetString() != "CadSpace" || root.GetProperty("version").GetInt32() is not (1 or 2 or 3)) throw new FormatException("Unsupported CadSpace project format/version.");
         var drawing = ReadDrawing(root.GetProperty("drawing"));
         DxfSource? source = null;
         if (root.TryGetProperty("dxfOriginal", out var raw))
@@ -108,7 +108,18 @@ public static class CadProjectCodec
             if(x.Children.Length!=y.Children.Length)throw new FormatException("Provenance child counts differ from DXF.");
             actual=x with{Children=x.Children.Zip(y.Children).Select(p=>VerifySourceEntity(p.First,p.Second)).ToImmutableArray()};
         }
-        if(!Equivalent(actual,saved))throw new FormatException("Provenance geometry differs from the original DXF. Refusing unsafe source-record reuse.");
+        if (!Equivalent(actual, saved))
+        {
+            if (!originalRecord.IsDefaultOrEmpty && originalRecord[0].Value.Trim() == "DIMENSION")
+            {
+                // Older projects used anonymous display wrappers or basic aligned definitions. Validate
+                // the entire earlier interpretation, including raw data, instead of trusting a saved picture.
+                var legacy = DxfEntityReader.Read(DxfRecordEditing.SemanticPairs(originalRecord), _ => { });
+                if (legacy is CompositeEntity c) legacy = c with { SourceRecord = string.Concat(originalRecord.Select(p => $"{p.Code.ToString(System.Globalization.CultureInfo.InvariantCulture)}\n{p.Value}\n")) };
+                return VerifySourceEntity(legacy with { Layout = actual.Layout }, saved);
+            }
+            throw new FormatException("Provenance geometry differs from the original DXF. Refusing unsafe source-record reuse.");
+        }
         return saved;
     }
     private static (string Handle, string Layer, int Aci, uint? Color, double Weight,
@@ -206,7 +217,7 @@ public static class CadProjectCodec
                     foreach (var v in e.Vertices) { w.WriteStartObject(); Point(w, "point", v.Position); w.WriteNumber("bulge", v.Bulge); w.WriteNumber("startWidth", v.StartWidth); w.WriteNumber("endWidth", v.EndWidth); w.WriteEndObject(); } w.WriteEndArray(); break;
                 case EllipseEntity e: Point(w, "center", e.Center); Point(w, "major", e.MajorAxis); w.WriteNumber("ratio", e.Ratio); w.WriteNumber("start", e.StartParameter); w.WriteNumber("end", e.EndParameter); break;
                 case TextEntity e: Point(w, "point", e.Position); w.WriteString("text", e.Text); w.WriteNumber("height", e.Height); w.WriteNumber("rotation", e.Rotation); break;
-                case DimensionEntity e: Point(w, "a", e.First); Point(w, "b", e.Second); Point(w, "location", e.Location); break;
+                case DimensionEntity e: WriteDimension(w, e); break;
                 case HatchEntity e: Points(w, "boundary", e.Boundary); w.WriteNumber("spacing", e.Spacing); w.WriteNumber("angle", e.Angle); w.WriteBoolean("solid", e.Solid); break;
                 case MeshEntity e: Points(w, "vertices", e.Vertices); w.WritePropertyName("triangles"); w.WriteStartArray(); foreach (var index in e.Triangles) w.WriteNumberValue(index); w.WriteEndArray(); w.WriteString("operation", e.Operation); break;
                 case BlockReferenceEntity e: w.WriteString("name", e.Name); Point(w, "point", e.Position); Point(w, "scale", e.Scale); w.WriteNumber("rotation", e.Rotation); break;
@@ -244,7 +255,7 @@ public static class CadProjectCodec
                 "LWPOLYLINE" => new PolylineEntity(e.GetProperty("vertices").EnumerateArray().Select(v => new PolyVertex(P(v, "point"), N(v, "bulge")) { StartWidth = v.TryGetProperty("startWidth", out var sw) ? sw.GetDouble() : 0, EndWidth = v.TryGetProperty("endWidth", out var ew) ? ew.GetDouble() : 0 }).ToImmutableArray(), e.GetProperty("closed").GetBoolean()) { ConstantWidth = e.TryGetProperty("constantWidth", out var cw) ? cw.GetDouble() : 0, ContinuousLinetype = e.TryGetProperty("continuousLinetype", out var generated) && generated.GetBoolean() },
                 "ELLIPSE" => new EllipseEntity(P(e, "center"), P(e, "major"), N(e, "ratio"), N(e, "start"), N(e, "end")),
                 "TEXT" or "MTEXT" => new TextEntity(P(e, "point"), S(e, "text"), N(e, "height"), N(e, "rotation"), type == "MTEXT"),
-                "DIMENSION" => new DimensionEntity(P(e, "a"), P(e, "b"), P(e, "location")),
+                "DIMENSION" => ReadDimension(e),
                 "HATCH" => new HatchEntity(Points(e.GetProperty("boundary")), N(e, "spacing"), N(e, "angle"), e.GetProperty("solid").GetBoolean()),
                 "MESH" => new MeshEntity(Points(e.GetProperty("vertices")), e.GetProperty("triangles").EnumerateArray().Select(i => i.GetInt32()).ToImmutableArray(), S(e, "operation")),
                 "INSERT" => new BlockReferenceEntity(S(e, "name"), P(e, "point"), P(e, "scale"), N(e, "rotation")),

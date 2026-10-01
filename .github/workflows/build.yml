@@ -23,6 +23,7 @@ jobs:
           python tests/fixtures/generate.py
           python tests/fixtures/editing.py
           python tests/fixtures/mtext.py
+          python tests/fixtures/dimensions.py
       - name: Geometry and document regression tests
         run: dotnet run --project tests/CadSpace.Tests -c Release
       - name: DXF and editing regression tests
@@ -52,6 +53,8 @@ jobs:
           dotnet run --project tests/CadSpace.Editing.Tests -c Release
           python tests/fixtures/editing.py artifacts/editing-audit
           python tests/fixtures/mtext.py artifacts/editing-audit
+          CADSPACE_DIMENSION_OUTPUT=artifacts/dimension-audit dotnet run --project tests/CadSpace.Dimension.Tests -c Release
+          python tests/fixtures/dimensions.py artifacts/dimension-audit
       - name: Pack reusable libraries
         run: |
           for project in Geometry Model Dxf Engine Rendering; do
@@ -60,7 +63,7 @@ jobs:
       - name: Source archive with generated test fixtures
         run: |
           git archive --format=zip HEAD -o artifacts/CadSpace-source.zip
-          zip -u artifacts/CadSpace-source.zip tests/fixtures/independent.zip tests/fixtures/independent-editing.dxf tests/fixtures/independent-mtext.dxf
+          zip -u artifacts/CadSpace-source.zip tests/fixtures/independent.zip tests/fixtures/independent-editing.dxf tests/fixtures/independent-mtext.dxf tests/fixtures/independent-dimensions*.dxf
       - uses: actions/upload-artifact@v4
         with:
           name: cadspace-libraries-and-source
@@ -134,7 +137,7 @@ jobs:
           ln -s "$PWD/artifacts/site" artifacts/server/CadSpace
           python -m http.server 8177 --bind 127.0.0.1 --directory artifacts/server > artifacts/server.log 2>&1 &
           result=0
-          for test in recovery_storage smoke styles widths workspace workspace_polish typography editing annotations mtext; do
+          for test in recovery_storage smoke styles widths workspace workspace_polish typography editing annotations mtext dimensions; do
             python "tests/browser/$test.py" || result=1
           done
           exit "$result"

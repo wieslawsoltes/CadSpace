@@ -24,6 +24,14 @@ public sealed partial class CommandEngine(CadSession session)
     public event Action<string>? ViewRequested;
     public static IReadOnlyList<CommandInfo> Commands { get; } = new CommandInfo[]
     {
+        new("DIMLINEAR", "DLI", "Horizontal or vertical linear dimension", "Annotate"),
+        new("DIMROTATED", "DROT", "Linear dimension at an explicit local angle", "Annotate"),
+        new("DIMANGULAR", "DAN", "Three-point angular dimension", "Annotate"),
+        new("DIMANGULAR2", "DA2", "Two-line angular dimension (four endpoints)", "Annotate"),
+        new("DIMORDINATE", "DOR", "X/Y ordinate with explicit origin", "Annotate"),
+        new("DIMRADIUS", "DRA", "Radius of a picked or selected circle/arc", "Annotate"),
+        new("DIMDIAMETER", "DDI", "Diameter of a picked or selected circle/arc", "Annotate"),
+        new("DIMEDIT", "DED", "Staged dimension formatting and label editor", "Annotate"),
         new("MTEXT", "MT", "Multiline text at a point; \\P paragraphs; DDEDIT content and size", "Annotate"),
         new("DDEDIT", "ED", "Edit selected or picked text and block attribute values", "Annotate"),
         new("EATTEDIT", "ATE", "Edit retained attribute values on one block reference", "Blocks"),
@@ -75,14 +83,14 @@ public sealed partial class CommandEngine(CadSession session)
         new("CLIP3D", "CLIP3D", "Clip at x,y,z,nx,ny,nz; OFF clears the plane", "View"),
         new("HELP", "?", "List supported commands", "Help")
     };
-    public void Cancel() { _matchDrawing = null; _matchDestinations = []; _active = ""; _points.Clear(); _text = ""; Prompt = "Type a command"; Changed?.Invoke(); }
+    public void Cancel() { _dimensionCircle = null; _matchDrawing = null; _matchDestinations = []; _active = ""; _points.Clear(); _text = ""; Prompt = "Type a command"; Changed?.Invoke(); }
     public void Start(string command) { Cancel(); Submit(command); }
     public void Submit(string input)
     {
         input = input.Trim();
         try
         {
-            if (TrySubmitMText(input) || TrySubmitAnnotation(input) || TrySubmitDrafting(input)) return;
+            if (TrySubmitDimension(input) || TrySubmitMText(input) || TrySubmitAnnotation(input) || TrySubmitDrafting(input)) return;
             if (!IsActive)
             {
                 if (input.Length == 0) return;
@@ -195,7 +203,7 @@ public sealed partial class CommandEngine(CadSession session)
         if (!IsActive || !point.IsFinite) return;
         try
         {
-            if (TryMTextPoint(point) || TryAnnotationPoint(point) || TryDraftPoint(point)) return;
+            if (TryDimensionPoint(point) || TryMTextPoint(point) || TryAnnotationPoint(point) || TryDraftPoint(point)) return;
             if (RequiresNumber || _active is "ARRAY" or "QSELECT" || (_active is "BLOCK" or "INSERT" && _text.Length == 0)) { Message?.Invoke(Prompt); return; }
             if (_active == "TEXT" && _points.Count == 1) { Message?.Invoke("Enter the text in the command line."); return; }
             if (_active is "TRIM" or "EXTEND") { Session.TrimOrExtend(point, PickTolerance, _active == "EXTEND"); Cancel(); return; }
@@ -329,6 +337,7 @@ public sealed partial class CommandEngine(CadSession session)
     }
     public IReadOnlyList<Entity> Preview(Vec3 cursor)
     {
+        if (DimensionPreview(cursor) is { } dimension) return dimension;
         if (_active == "MTEXT") return [];
         if (DraftPreview(cursor) is { } drafting) return drafting;
         if (_points.Count == 0 || RequiresNumber) return [];

@@ -42,6 +42,7 @@ public sealed class CadDocument
         if (entity is ArcEntity a && (!double.IsFinite(a.Radius) || a.Radius <= 0 || !double.IsFinite(a.StartAngle) || !double.IsFinite(a.EndAngle))) throw new ArgumentException("Invalid arc.");
         if (entity is EllipseEntity ell && (ell.MajorAxis.Length <= 1e-9 || !double.IsFinite(ell.Ratio) || ell.Ratio <= 0 || !double.IsFinite(ell.StartParameter) || !double.IsFinite(ell.EndParameter))) throw new ArgumentException("Invalid ellipse.");
         if (entity is TextEntity t && (!double.IsFinite(t.Height) || t.Height <= 0 || !double.IsFinite(t.Rotation))) throw new ArgumentException("Invalid text geometry.");
+        if (entity is DimensionEntity dim) DimensionGeometry.Validate(dim);
         if (entity is PolylineEntity wide) PolylineWidths.Validate(wide);
         if (entity is PolylineEntity p && (p.Vertices.Length < 2 || p.Vertices.Any(v => !double.IsFinite(v.Bulge)))) throw new ArgumentException("Invalid polyline.");
         if (entity is MeshEntity m && (m.Triangles.Length % 3 != 0 || m.Triangles.Length > 3000000 || m.Triangles.Any(i => i < 0 || i >= m.Vertices.Length))) throw new ArgumentException("Invalid mesh indices.");
@@ -62,7 +63,7 @@ public sealed class CadDocument
         foreach (var layer in drawing.Layers.Values)
             if (string.IsNullOrWhiteSpace(layer.Name) || layer.Name.Contains('\n') || layer.Name.Contains('\r') || !double.IsFinite(layer.LineWeight) || layer.LineWeight < 0) throw new ArgumentException("Invalid layer.");
         foreach (var entity in drawing.Entities.Concat(drawing.Blocks.Values.SelectMany(b => b.Entities))) ValidateEntity(entity, drawing);
-        IEnumerable<string> References(Entity e) => e switch { BlockReferenceEntity b => [b.Name], PlacedEntity p => References(p.Geometry), CompositeEntity c => c.Children.SelectMany(References), _ => [] };
+        IEnumerable<string> References(Entity e) => e switch { BlockReferenceEntity b => [b.Name], DimensionEntity d when DimensionGeometry.UsesPicture(d) => [d.Picture!.BlockName], PlacedEntity p => References(p.Geometry), CompositeEntity c => c.Children.SelectMany(References), _ => [] };
         void Visit(string name, HashSet<string> ancestors)
         {
             if (!drawing.Blocks.TryGetValue(name, out var block)) return;
