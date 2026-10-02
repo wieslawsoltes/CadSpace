@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net10.0</TargetFramework><IsPackable>false</IsPackable></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/CadSpace.Engine/CadSpace.Engine.csproj" />
+    <ProjectReference Include="../../src/CadSpace.Dxf/CadSpace.Dxf.csproj" />
+    <None Include="../fixtures/independent-hatches.dxf" Link="fixtures/independent-hatches.dxf" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../fixtures/independent-editing.dxf" Link="fixtures/independent-editing.dxf" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

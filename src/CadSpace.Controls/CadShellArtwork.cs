@@ -13,6 +13,10 @@ internal static class CadShellArtwork
         void Arrow(float x, float y) { L(x - 5, y, x + 5, y); L(x + 5, y, x, y - 4); L(x + 5, y, x, y + 4); }
         switch (kind)
         {
+            case "GRADIENT":
+                for (var i = 0; i < 7; i++) { p.Color = new SKColor((byte)(45+i*26), (byte)(100+i*12), (byte)(210-i*22)); L(5+i*3.5f,5,5+i*3.5f,27); } break;
+            case "HATCHEDIT": R(3,4,22,24); L(4,14,14,4); L(4,23,23,4); L(10,28,26,12); break;
+            case "HATCHGENERATEBOUNDARY": R(4,4,24,24); R(12,12,8,8); break;
             case "DIMLINEAR": case "DIMROTATED": case "DIMORDINATE":
                 L(4, 3, 4, 27); L(28, 3, 28, 27); L(4, 16, 28, 16); L(4, 16, 10, 12); L(4, 16, 10, 20); L(28, 16, 22, 12); L(28, 16, 22, 20); break;
             case "DIMRADIUS": case "DIMDIAMETER":

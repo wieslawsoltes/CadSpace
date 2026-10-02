@@ -33,8 +33,9 @@ internal static class DxfEntityWriter
             Start("HATCH", "AcDbHatch"); Point(10, new(0, 0, z)); Point(210, normal); Pair(2, hatch.PatternName); Pair(70, hatch.Solid ? 1 : 0); Pair(71, 0); Pair(91, hatch.Loops.Length);
             foreach (var loop in hatch.Loops)
             {
-                Pair(92, 2); Pair(72, loop.Any(v => v.Bulge != 0) ? 1 : 0); Pair(73, 1); Pair(93, loop.Length);
-                foreach (var vertex in loop) { Pair(10, vertex.Position.X); Pair(20, vertex.Position.Y); if (loop.Any(v => v.Bulge != 0)) Pair(42, vertex.Bulge); }
+                var bulged = loop.Any(v => v.Bulge != 0);
+                Pair(92, 2); Pair(72, bulged ? 1 : 0); Pair(73, 1); Pair(93, loop.Length);
+                foreach (var vertex in loop) { Pair(10, vertex.Position.X); Pair(20, vertex.Position.Y); if (bulged) Pair(42, vertex.Bulge); }
                 Pair(97, 0);
             }
             Pair(75, hatch.IslandStyle); Pair(76, 1);
@@ -48,6 +49,7 @@ internal static class DxfEntityWriter
                 }
             }
             Pair(98, 0);
+            if (hatch.Gradient is { } gradient) DxfHatchGradient.Write(gradient, Pair);
             if (hatch.SampledBoundary) warn("Edited HATCH edge-list boundaries are exported as sampled polyline boundaries.");
         }
         void Ellipse(Vec3 center, Vec3 u, Vec3 v, double start, double sweep)
@@ -127,7 +129,10 @@ internal static class DxfEntityWriter
                         var direction = toLocal.Vector(GeometryMath.OnCircle(default, 1, p.Angle));
                         return new HatchPatternLine(GeometryMath.Angle(direction), toLocal.Point(p.Origin), toLocal.Vector(p.Offset), p.Dashes.Select(d => d * direction.Length).ToImmutableArray());
                     }).ToImmutableArray();
-                    Hatch(region with { Loops = loops, Pattern = patterns, SampledBoundary = region.SampledBoundary || !sameScale }, normal); break;
+                    if (region.Gradient != null && !sameScale) throw new NotSupportedException("Nonuniformly transformed gradient export needs a native project to preserve the color field.");
+                    var gradient = region.Gradient;
+                    if (gradient != null) gradient = gradient with { Angle = GeometryMath.Angle(toLocal.Vector(GeometryMath.OnCircle(default, 1, gradient.Angle))) };
+                    Hatch(region with { Loops = loops, Pattern = patterns, Gradient = gradient, SampledBoundary = region.SampledBoundary || !sameScale }, normal); break;
                 case HatchEntity simple:
                     Placed(new PlacedEntity(Region(simple), t)); break;
                 case BlockReferenceEntity block when drawing.Blocks.TryGetValue(block.Name, out var definition):
@@ -164,6 +169,7 @@ internal static class DxfEntityWriter
             case HatchEntity simple: Hatch(Region(simple)); break;
             case PlacedEntity placed: Placed(placed); break;
             case CompositeEntity composite:
+                if (DxfAttributeEditing.TryWriteRetained(composite, warn, out var retainedAttributes)) { buffer.Append(retainedAttributes); break; }
                 warn($"Modified {composite.DxfType} is exported as its explicit display children, not the original compound semantics.");
                 foreach (var child in composite.Children)
                 {

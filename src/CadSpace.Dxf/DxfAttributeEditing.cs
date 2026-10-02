@@ -148,6 +148,28 @@ public static class DxfAttributeEditing
         result[found] = new(1, value); return result.ToImmutable();
     }
 
+    /// <summary>Reuse a complete native attribute sequence even when the original whole-file source is absent.</summary>
+    internal static bool TryWriteRetained(CompositeEntity insert, Action<string> warn, out string text)
+    {
+        text = "";
+        if (insert.DxfType != "INSERT" || insert.SourceRecord.Length == 0) return false;
+        try
+        {
+            var records = ValidatedRecords(insert);
+            var raw = records.SelectMany(r => r).ToImmutableArray();
+            // A copied/renamed root must not reintroduce the former root handle.
+            if (!S(DxfRecordEditing.SemanticPairs(records[0]), 5).Equals(insert.Handle, StringComparison.OrdinalIgnoreCase)) return false;
+            var original = DxfEntityReader.Read(DxfRecordEditing.SemanticPairs(raw), _ => { });
+            var baseline = (CompositeEntity)CopyRootStyle(insert, original);
+            baseline = baseline with { Id = insert.Id, Handle = insert.Handle };
+            if (!DxfRecordEditing.TryWrite(insert, baseline, raw, warn, out text)) return false;
+            warn("Retained INSERT/ATTRIB sequence: application payloads and external references are preserved, not remapped or regenerated.");
+            return true;
+        }
+        catch (Exception e) when (e is ArgumentException or FormatException or NotSupportedException or OverflowException)
+        { return false; }
+    }
+
     // Called before the generic source-record patcher. All differences must be supported value edits, not arbitrary SourceRecord changes.
     internal static bool TryWrite(Entity after, Entity before, ImmutableArray<DxfPair> source, Action<string> warn, out string text)
     {

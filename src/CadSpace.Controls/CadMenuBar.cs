@@ -13,8 +13,8 @@ public sealed class CadMenuBar : StackPanel
         Add("File", ["NEW", "OPEN", "SAVE", "-", "EXPORT", "EXPORT_BINARY", "RECOVER", "-", "ABOUT"]);
         Add("Edit", ["UNDO", "REDO", "-", "ERASE", "SELECTALL", "QSELECT", "SELECTSIMILAR"]);
         Add("View", ["TOP", "3DORBIT", "ZOOM", "-", "PROPERTIES", "TOOLPALETTES", "RIBBON", "RIBBONCLOSE", "CLEANSCREENON", "CLEANSCREENOFF"]);
-        Add("Draw", ["LINE", "PLINE", "CIRCLE", "ARC", "RECTANG", "POLYGON", "DONUT", "ELLIPSE", "SPLINE", "3DPOLY", "POINT", "HATCH", "TEXT", "MTEXT"]);
-        Add("Modify", ["MOVE", "COPY", "ROTATE", "SCALE", "MIRROR", "OFFSET", "-", "TRIM", "EXTEND", "FILLET", "CHAMFER", "STRETCH", "PEDIT", "SPLINEDIT", "JOIN", "MATCHPROP", "DDEDIT", "EATTEDIT", "EXPLODE"]);
+        Add("Draw", ["LINE", "PLINE", "CIRCLE", "ARC", "RECTANG", "POLYGON", "DONUT", "ELLIPSE", "SPLINE", "3DPOLY", "POINT", "HATCH", "GRADIENT", "TEXT", "MTEXT"]);
+        Add("Modify", ["MOVE", "COPY", "ROTATE", "SCALE", "MIRROR", "OFFSET", "-", "TRIM", "EXTEND", "FILLET", "CHAMFER", "STRETCH", "PEDIT", "HATCHEDIT", "HATCHGENERATEBOUNDARY", "SPLINEDIT", "JOIN", "MATCHPROP", "DDEDIT", "EATTEDIT", "EXPLODE"]);
         Add("Dimension", ["DIMLINEAR", "DIMALIGNED", "DIMROTATED", "DIMANGULAR", "DIMANGULAR2", "DIMRADIUS", "DIMDIAMETER", "DIMORDINATE", "DIMEDIT"]);
         Add("Tools", ["LAYER", "LINETYPE", "BLOCK", "INSERT", "-", "DIST", "AREA", "OPTIONS"]);
         Add("Help", ["HELP", "ABOUT"]);

@@ -56,6 +56,7 @@ public sealed partial class CadWorkspace : UserControl
         CadUi.Identify(CommandLine.Input, "command.input", "CAD command input");
         MenuBar.CommandRequested += Invoke; ApplicationBar.CommandRequested += Invoke; Ribbon.CommandRequested += Invoke; ToolPalette.CommandRequested += Invoke;
         Ribbon.Message += CommandLine.AddMessage; ToolPalette.InsertRequested += Insert; Palette.InsertRequested += Insert;
+        Palette.HatchEditRequested += () => Invoke("HATCHEDIT");
         Palette.SplineEditRequested += () => Invoke("SPLINEDIT");
         Palette.DimensionEditRequested += () => Invoke("DIMEDIT");
         Palette.AnnotationEditRequested += () => Invoke("DDEDIT");
@@ -187,7 +188,7 @@ public sealed partial class CadWorkspace : UserControl
     {
         if (_session == null || ReferenceEquals(_selectionDrawing, _session.Document.Drawing) && _selectionRevision == _session.SelectionRevision) return;
         _selectionDrawing = _session.Document.Drawing; _selectionRevision = _session.SelectionRevision; var selected = _session.SelectedEntities();
-        Ribbon.SetContext(selected.Length == 0 ? "" : selected.All(e => e is PolylineEntity or PlacedEntity { Geometry: PolylineEntity }) ? "Polyline" : selected.All(e => e is MeshEntity) ? "Mesh" : selected.All(e => DimensionGeometry.Unwrap(e) != null) ? "Dimension" : selected.All(e => SplineEditing.Unwrap(e) != null) ? "Spline" : "Selection");
+        Ribbon.SetContext(selected.Length == 0 ? "" : selected.All(e => e is PolylineEntity or PlacedEntity { Geometry: PolylineEntity }) ? "Polyline" : selected.All(e => e is MeshEntity) ? "Mesh" : selected.All(e => DimensionGeometry.Unwrap(e) != null) ? "Dimension" : selected.All(e => SplineEditing.Unwrap(e) != null) ? "Spline" : selected.All(e => HatchEditing.Unwrap(e) != null) ? "Hatch" : "Selection");
     }
     public void SetTitle(string name) => ApplicationBar.SetTitle(name + (_session?.Document.IsDirty == true ? " *" : ""));
     public void Bind(CadSession session, CommandEngine commands)

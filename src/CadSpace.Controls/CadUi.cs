@@ -56,6 +56,7 @@ public static class CadUi
         };
     }
     public static string Label(string command) => command switch {
+        "GRADIENT" => "Gradient", "HATCHEDIT" => "Edit Hatch", "HATCHGENERATEBOUNDARY" => "Boundary",
         "SPLINEDIT" => "Edit Spline",
         "DIMLINEAR" => "Linear", "DIMROTATED" => "Rotated", "DIMANGULAR" => "Angular", "DIMANGULAR2" => "2-Line Angular",
         "DIMRADIUS" => "Radius", "DIMDIAMETER" => "Diameter", "DIMORDINATE" => "Ordinate", "DIMEDIT" => "Edit Dimension",

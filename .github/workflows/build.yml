@@ -14,6 +14,10 @@ jobs:
       cancel-in-progress: true
     steps:
       - uses: actions/checkout@v4
+      - name: Retain source snapshot for failed validation
+        run: |
+          mkdir -p artifacts
+          git archive --format=zip HEAD -o artifacts/CadSpace-source.zip
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
@@ -25,6 +29,7 @@ jobs:
           python tests/fixtures/mtext.py
           python tests/fixtures/dimensions.py
           python tests/fixtures/splines.py
+          python tests/fixtures/hatches.py
       - name: Geometry and document regression tests
         run: dotnet run --project tests/CadSpace.Tests -c Release
       - name: DXF and editing regression tests
@@ -58,16 +63,23 @@ jobs:
           python tests/fixtures/dimensions.py artifacts/dimension-audit
           CADSPACE_SPLINE_OUTPUT=artifacts/spline-audit dotnet run --project tests/CadSpace.Spline.Tests -c Release
           python tests/fixtures/splines.py artifacts/spline-audit
+      - name: Hatch and native attribute regressions
+        env:
+          CADSPACE_HATCH_OUTPUT: artifacts/hatch-audit
+        run: |
+          dotnet run --project tests/CadSpace.Hatch.Tests -c Release
+          python tests/fixtures/hatches.py artifacts/hatch-audit
       - name: Pack reusable libraries
         run: |
           for project in Geometry Model Dxf Engine Rendering; do
             dotnet pack src/CadSpace.$project -c Release -o artifacts/packages
           done
-      - name: Source archive with generated test fixtures
+      - name: Add generated fixtures to source archive
+        if: always()
         run: |
-          git archive --format=zip HEAD -o artifacts/CadSpace-source.zip
-          zip -u artifacts/CadSpace-source.zip tests/fixtures/independent.zip tests/fixtures/independent-editing.dxf tests/fixtures/independent-mtext.dxf tests/fixtures/independent-dimensions*.dxf tests/fixtures/independent-spline.dxf
+          find tests/fixtures -maxdepth 1 -type f \( -name '*.dxf' -o -name 'independent.zip' \) -print | zip -u artifacts/CadSpace-source.zip -@
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: cadspace-libraries-and-source
           path: artifacts/
@@ -140,7 +152,7 @@ jobs:
           ln -s "$PWD/artifacts/site" artifacts/server/CadSpace
           python -m http.server 8177 --bind 127.0.0.1 --directory artifacts/server > artifacts/server.log 2>&1 &
           result=0
-          for test in recovery_storage smoke styles widths workspace workspace_polish typography editing annotations mtext dimensions splines; do
+          for test in recovery_storage smoke styles widths workspace workspace_polish typography editing annotations mtext dimensions splines hatches; do
             python "tests/browser/$test.py" || result=1
           done
           exit "$result"
