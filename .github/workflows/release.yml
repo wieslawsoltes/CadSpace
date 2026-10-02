@@ -53,6 +53,7 @@ jobs:
           python tests/fixtures/dimensions.py
           python tests/fixtures/splines.py
           python tests/fixtures/hatches.py
+          python tests/fixtures/leaders.py
       - run: dotnet run --project tests/CadSpace.Tests -c Release
       - run: dotnet run --project tests/CadSpace.Exchange.Tests -c Release
       - run: dotnet run --project tests/CadSpace.Persistence.Tests -c Release
@@ -76,6 +77,8 @@ jobs:
           python tests/fixtures/splines.py artifacts/spline-audit
           CADSPACE_HATCH_OUTPUT=artifacts/hatch-audit dotnet run --project tests/CadSpace.Hatch.Tests -c Release
           python tests/fixtures/hatches.py artifacts/hatch-audit
+          CADSPACE_LEADER_OUTPUT=artifacts/leader-audit dotnet run --project tests/CadSpace.Leader.Tests -c Release
+          python tests/fixtures/leaders.py artifacts/leader-audit
 
   desktop:
     name: Desktop (${{ matrix.rid }})

@@ -64,6 +64,8 @@ public sealed partial class CadViewport : Grid
             {
                 var hit = _session.HitTest(World(e.GetPosition(this)), 7 / Camera.PixelsPerUnit);
                 var entity = hit is Guid id ? _session.Document.Drawing.Entities.FirstOrDefault(x => x.Id == id) : null;
+                if (entity != null && LeaderGeometry.Unwrap(entity) != null)
+                { CancelInteraction(); _session.Select(entity.Id); _commands.Start("LEADEREDIT"); e.Handled = true; return; }
                 if (entity != null && HatchEditing.Unwrap(entity) != null)
                 { CancelInteraction(); _session.Select(entity.Id); _commands.Start("HATCHEDIT"); e.Handled = true; return; }
                 if (entity != null && SplineEditing.Unwrap(entity) != null)
