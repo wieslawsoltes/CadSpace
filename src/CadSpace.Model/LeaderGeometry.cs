@@ -29,7 +29,8 @@ public sealed record LeaderEntity(ImmutableArray<Vec3> Vertices) : Entity
 /// <summary>Shared identity-cached leader paths/arrows for 2D, 3D and picking.</summary>
 public static class LeaderGeometry
 {
-    public const int MaximumVertices = 100000;
+    // Group 76 is a signed 16-bit DXF integer in binary transport.
+    public const int MaximumVertices = 32767;
     private static readonly ConditionalWeakTable<LeaderEntity, Lazy<ImmutableArray<Entity>>> Cache = new();
     public static LeaderEntity? Unwrap(Entity e)
     {
@@ -39,7 +40,7 @@ public static class LeaderGeometry
     public static void Validate(LeaderEntity e)
     {
         if (e.Vertices.IsDefault || e.Vertices.Length is < 2 or > MaximumVertices || e.Vertices.Any(p => !p.IsFinite))
-            throw new ArgumentException("A leader needs 2–100,000 finite vertices.");
+            throw new ArgumentException("A leader needs 2–32,767 finite vertices.");
         for (var i = 1; i < e.Vertices.Length; i++)
             if (!double.IsFinite(e.Vertices[i].DistanceTo(e.Vertices[i-1])) || e.Vertices[i].DistanceTo(e.Vertices[i-1]) < 1e-12)
                 throw new ArgumentException("Consecutive leader vertices must differ and have a finite distance.");
@@ -60,6 +61,7 @@ public static class LeaderGeometry
         var vertices = e.Vertices;
         if (e.Hookline && e.AnnotationType == 0 && e.TextAbove && e.TextWidth > 0)
             vertices = vertices.Add(vertices[^1] + e.Horizontal * ((e.HooklineReversed ? -1 : 1) * (e.TextWidth + e.Gap)));
+        if (vertices.Any(p => !p.IsFinite)) throw new ArgumentException("Leader hookline exceeds the coordinate range.");
         items.Add(new Polyline3DEntity(vertices));
         if (e.ArrowEnabled && e.ArrowSize > 0)
         {
@@ -68,6 +70,7 @@ public static class LeaderGeometry
             if (side.Length < 1e-10) side = (Math.Abs(axis.Z) < .9 ? Vec3.UnitZ : Vec3.UnitY).Cross(axis);
             side = side.Normalized * (e.ArrowSize / 6);
             var back = vertices[0] + axis * e.ArrowSize;
+            if (!(back + side).IsFinite || !(back - side).IsFinite) throw new ArgumentException("Leader arrow exceeds the coordinate range.");
             items.Add(new MeshEntity([vertices[0], back + side, back - side], [0,1,2], "Dimension arrow"));
         }
         return items.ToImmutable();

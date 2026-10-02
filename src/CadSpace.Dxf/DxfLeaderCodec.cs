@@ -15,14 +15,18 @@ internal static class DxfLeaderCodec
     private static Vec3 P(IEnumerable<DxfPair> p, int c, Vec3 fallback = default) => new(N(p,c,fallback.X),N(p,c+10,fallback.Y),N(p,c+20,fallback.Z));
     public static bool Contains(Drawing d)
     {
-        static bool Has(Entity e) => LeaderGeometry.Unwrap(e) != null || e is CompositeEntity c && c.Children.Any(Has);
+        static bool Has(Entity e) => e is LeaderEntity || e is PlacedEntity p && Has(p.Geometry) || e is CompositeEntity c && c.Children.Any(Has);
         return d.Entities.Any(Has) || d.Blocks.Values.Any(b => b.Entities.Any(Has));
     }
     public static Entity Read(ImmutableArray<DxfPair> raw, Dictionary<string, ImmutableArray<DxfPair>> styles, Action<string> warn)
     {
         var p = DxfRecordEditing.SemanticPairs(raw);
         // Do not turn stored spline fit points into a claimed editable straight path.
-        if (I(p,72) != 0) return DxfEntityReader.Read(p, warn);
+        if (I(p,72) != 0) {
+            if (I(p,72) != 1) throw new FormatException("Invalid LEADER path type.");
+            warn("Spline-path LEADER remains a source-backed display fallback; its fit points are not an editable straight leader.");
+            return DxfEntityReader.Read(p, warn);
+        }
         var points = DxfEntityReader.Points(p,10);
         if (I(p,76,points.Length) != points.Length) throw new FormatException("LEADER vertex count mismatch.");
         foreach (var c in new[] { 71,74,75 }) if (I(p,c,1) is not (0 or 1)) throw new FormatException("Invalid LEADER flag.");
@@ -45,6 +49,7 @@ internal static class DxfLeaderCodec
         }
         double V(int code, double fallback) => N(values.Select(v => new DxfPair(v.Key,v.Value)), code, fallback);
         var scale = V(40,1); if (scale == 0) { scale = 1; warn("Annotative LEADER scale uses 1 for display; no annotation-scale regeneration."); }
+        if (!double.IsFinite(scale) || scale <= 0) throw new FormatException("Invalid leader dimension scale.");
         if (values.TryGetValue(341,out var arrowBlock) && arrowBlock != "0")
             warn("Custom leader arrow block is retained in source; displayed as a closed filled arrow.");
         var e = new LeaderEntity(points) { ArrowEnabled = I(p,71,1) != 0, ArrowSize = V(41,2.5)*scale,
@@ -89,7 +94,7 @@ internal static class DxfLeaderCodec
         if (!inserted || !count || a.ArrowEnabled != b.ArrowEnabled && !arrow) return false;
         text = Encode(output); warn("Edited LEADER vertices retain source style/annotation data; linked annotations and application caches are not regenerated."); return true;
     }
-    public static string Write(Entity root, Drawing drawing, Func<string> next, Action<string> warn)
+    private static string Write(Entity root, string canonicalStyle, string? annotationHandle, Func<string> next, Action<string> warn)
     {
         var e = root; var transform = Transform3.Identity;
         while (e is PlacedEntity p) { transform = p.Placement.Then(transform); e = p.Geometry; }
@@ -103,10 +108,9 @@ internal static class DxfLeaderCodec
         Pair(6,root.Linetype); Pair(48,root.LinetypeScale); Pair(62,root.ColorIndex); if (root.TrueColor is uint c) Pair(420,c & 0xffffff);
         if (root.LineWeight >= 0) Pair(370,Math.Round(root.LineWeight*100)); if (!root.Visible) Pair(60,1);
         if (root.Layout != "Model") { Pair(67,1); Pair(410,root.Layout); }
-        Pair(100,"AcDbLeader"); Pair(3,"Standard"); Pair(71,leader.ArrowEnabled ? 1 : 0); Pair(72,0);
-        var reference = leader.AnnotationHandle; var detached = false;
-        if (reference != "0" && !drawing.Entities.Concat(drawing.Blocks.Values.SelectMany(v => v.Entities)).Any(v => v.Handle.Equals(reference,StringComparison.OrdinalIgnoreCase)))
-        { warn("LEADER annotation target is missing; canonical export detaches its dangling reference."); reference = "0"; detached = true; }
+        Pair(100,"AcDbLeader"); Pair(3,canonicalStyle); Pair(71,leader.ArrowEnabled ? 1 : 0); Pair(72,0);
+        var reference = annotationHandle ?? "0"; var detached = annotationHandle == null;
+        if (detached) warn("LEADER annotation target is missing, ambiguous or incompatible; canonical export detaches its reference.");
         Pair(73,detached ? 3 : leader.AnnotationType); Pair(74,leader.HooklineReversed ? 1 : 0); Pair(75,leader.Hookline ? 1 : 0);
         Pair(40,leader.TextHeight); Pair(41,leader.TextWidth); Pair(76,leader.Vertices.Length);
         foreach (var p in leader.Vertices) Point(10,p);
@@ -114,6 +118,59 @@ internal static class DxfLeaderCodec
         Pair(1001,"ACAD"); Pair(1000,"DSTYLE"); Pair(1002,"{");
         Pair(1070,40); Pair(1040,1); Pair(1070,41); Pair(1040,leader.ArrowSize); Pair(1070,147); Pair(1040,leader.Gap); Pair(1070,77); Pair(1070,leader.TextAbove ? 1 : 0);
         Pair(1002,"}"); return b.ToString();
+    }
+    /// <summary>One export-scoped reference index and canonical style; never inherit unrelated Standard overrides.</summary>
+    internal sealed class Exporter
+    {
+        private readonly Lazy<Dictionary<ulong, Entity?>> _targets;
+        private readonly HashSet<string> _styles;
+        private readonly Func<string> _next;
+        private readonly Action<string> _warn;
+        private string? _style;
+        public List<ImmutableArray<DxfPair>> StyleRecords { get; } = [];
+        public Exporter(Drawing drawing, DxfSource? source, Func<string> next, Action<string> warn)
+        {
+            _next = next; _warn = warn;
+            _styles = new(DxfDimensions.Styles(source?.Sections.FirstOrDefault(s => s.Name == "TABLES")?.Pairs ?? []).Keys, StringComparer.OrdinalIgnoreCase);
+            _targets = new(() => {
+                var index = new Dictionary<ulong, Entity?>();
+                foreach (var e in drawing.Entities.Concat(drawing.Blocks.Values.SelectMany(b => b.Entities)))
+                    if (ulong.TryParse(e.Handle, NumberStyles.HexNumber, Culture, out var id) && id != 0)
+                        if (!index.TryAdd(id,e)) index[id] = null;
+                return index;
+            });
+        }
+        private string? Target(LeaderEntity leader, string layout)
+        {
+            if (!ulong.TryParse(leader.AnnotationHandle, NumberStyles.HexNumber, Culture, out var id)) return null;
+            if (id == 0) return "0";
+            if (!_targets.Value.TryGetValue(id,out var target) || target == null || !target.Layout.Equals(layout,StringComparison.OrdinalIgnoreCase)) return null;
+            var valid = leader.AnnotationType switch {
+                0 => target.Kind == "MTEXT", 1 => target.Kind == "TOLERANCE", 2 => target.Kind == "INSERT",
+                _ => target.Kind is "MTEXT" or "TOLERANCE" or "INSERT"
+            };
+            return valid ? target.Handle : null;
+        }
+        public bool CanRetain(Entity root)
+        {
+            var leader = LeaderGeometry.Unwrap(root);
+            if (leader == null) return true;
+            var reference = Target(leader, root.Layout);
+            return reference != null && (reference == "0" || reference.Equals(leader.AnnotationHandle,StringComparison.OrdinalIgnoreCase));
+        }
+        public string Write(Entity root)
+        {
+            if (_style == null)
+            {
+                var i = 1; _style = "CadSpaceLeader";
+                while (!_styles.Add(_style)) _style = "CadSpaceLeader" + i++;
+                StyleRecords.Add([
+                    new(0,"DIMSTYLE"), new(105,_next()), new(100,"AcDbSymbolTableRecord"), new(100,"AcDbDimStyleTableRecord"),
+                    new(2,_style), new(70,"0"), new(40,"1"), new(41,"2.5"), new(140,"2.5"), new(147,"0.625"), new(77,"1")
+                ]);
+            }
+            return DxfLeaderCodec.Write(root, _style, Target(LeaderGeometry.Unwrap(root)!,root.Layout), _next, _warn);
+        }
     }
     private static string Encode(IEnumerable<DxfPair> pairs) => string.Concat(pairs.Select(p => $"{p.Code.ToString(Culture)}\n{p.Value}\n"));
 }

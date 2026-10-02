@@ -119,10 +119,8 @@ internal static class DxfDocumentWriter
             tables.Append(Encode(header)); foreach (var record in values) tables.Append(Encode(Owner(record, id))); tables.Append("0\nENDTAB\n");
         }
         foreach (var (name, table) in oldTables.Where(t => t.Key is not ("LTYPE" or "LAYER" or "BLOCK_RECORD" or "DIMSTYLE" or "APPID"))) Table(name, table.Entries);
-        var dimStyles = Entries("DIMSTYLE").Concat(dimensionStyles ?? []).ToList();
-        if (DxfLeaderCodec.Contains(drawing) && !dimStyles.Any(r => Value(r,2).Equals("Standard", StringComparison.OrdinalIgnoreCase)))
-            dimStyles.Add(Record(0,"DIMSTYLE",105,next(),100,"AcDbSymbolTableRecord",100,"AcDbDimStyleTableRecord",2,"Standard",70,0,40,1,41,2.5,140,2.5));
-        if (dimStyles.Count > 0) Table("DIMSTYLE", dimStyles);
+        var dimStyles = Entries("DIMSTYLE").Concat(dimensionStyles ?? []).ToArray();
+        if (dimStyles.Length > 0) Table("DIMSTYLE", dimStyles);
         Table("LTYPE", DxfLinetypes.Write(drawing, source, Entries("LTYPE"), next));
         if (!oldTables.ContainsKey("STYLE")) Table("STYLE", [Record(0, "STYLE", 5, next(), 100, "AcDbSymbolTableRecord", 100, "AcDbTextStyleTableRecord", 2, "Standard", 70, 0, 40, 0, 41, 1, 50, 0, 71, 0, 42, 2.5, 3, "txt", 4, "")]);
         var applications = Entries("APPID");

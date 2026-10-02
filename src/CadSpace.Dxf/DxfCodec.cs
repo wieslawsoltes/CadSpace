@@ -142,6 +142,7 @@ public static class DxfCodec
         string NewHandle() => checked(++handle).ToString("X", Culture);
         var originals = source?.Original.Entities.Concat(source.Original.Blocks.Values.SelectMany(b => b.Entities)).ToDictionary(e => e.Id) ?? new();
         var dimensions = new DxfDimensions.Exporter(drawing, source, NewHandle, warnings.Add);
+        var leaders = new DxfLeaderCodec.Exporter(drawing, source, NewHandle, warnings.Add);
         var emitted = new Dictionary<Entity, string>(ReferenceEqualityComparer.Instance);
         string Emit(Entity entity)
         {
@@ -150,8 +151,9 @@ public static class DxfCodec
         }
         string EmitCore(Entity entity)
         {
-            if (source != null && originals.TryGetValue(entity.Id, out var original) && entity == original && source.Records.TryGetValue(entity.Id, out var raw)) return Encode(raw);
-            if (source != null && originals.TryGetValue(entity.Id, out var prior) && source.Records.TryGetValue(entity.Id, out var retained)
+            var retainLeader = leaders.CanRetain(entity);
+            if (retainLeader && source != null && originals.TryGetValue(entity.Id, out var original) && entity == original && source.Records.TryGetValue(entity.Id, out var raw)) return Encode(raw);
+            if (retainLeader && source != null && originals.TryGetValue(entity.Id, out var prior) && source.Records.TryGetValue(entity.Id, out var retained)
                 && (DxfLeaderCodec.TryPatch(entity, prior, retained, warnings.Add, out var patched)
                     || DxfAttributeEditing.TryWrite(entity, prior, retained, warnings.Add, out patched)
                     || DxfRecordEditing.TryWrite(entity, prior, retained, warnings.Add, out patched))) return patched;
@@ -159,7 +161,7 @@ public static class DxfCodec
             if (LeaderGeometry.Unwrap(entity) != null)
             {
                 if (source?.Records.ContainsKey(entity.Id) == true) warnings.Add("Regenerated LEADER: unmodeled styles/application data may be lost; annotations are not regenerated.");
-                return DxfLeaderCodec.Write(entity, drawing, NewHandle, warnings.Add);
+                return leaders.Write(entity);
             }
             if (DimensionGeometry.Unwrap(entity) != null) return dimensions.Write(entity);
             var buffer = new StringBuilder();
@@ -203,7 +205,7 @@ public static class DxfCodec
         // Discover generated dimension pictures/styles before the document writer allocates ownership tables.
         foreach (var entity in drawing.Entities.Concat(drawing.Blocks.Values.SelectMany(b => b.Entities))) Emit(entity);
         var exportDrawing = dimensions.Blocks.Count == 0 ? drawing : drawing with { Blocks = drawing.Blocks.SetItems(dimensions.Blocks) };
-        var text = DxfDocumentWriter.Write(exportDrawing, source, Emit, NewHandle, dimensions.StyleRecords);
+        var text = DxfDocumentWriter.Write(exportDrawing, source, Emit, NewHandle, dimensions.StyleRecords.Concat(leaders.StyleRecords).ToArray());
         return new(text, warnings.Distinct().ToImmutableArray());
     }
     public static ImmutableArray<DxfPair> ParsePairs(string text)

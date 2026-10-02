@@ -51,7 +51,7 @@ public sealed partial class CommandEngine
     {
         if (_active == "LEADEREDIT") return [];
         if (_active != "LEADER") return null;
-        if (_points.Count == 0 || point.DistanceTo(_points[^1]) < 1e-12) return [];
+        if (!point.IsFinite || _points.Count == 0 || _points.Count >= LeaderGeometry.MaximumVertices || point.DistanceTo(_points[^1]) < 1e-12) return [];
         return [new LeaderEntity(_points.Append(point).ToImmutableArray())];
     }
 }
