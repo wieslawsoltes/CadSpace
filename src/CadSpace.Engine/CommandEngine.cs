@@ -36,6 +36,8 @@ public sealed partial class CommandEngine(CadSession session)
         new("DIMRADIUS", "DRA", "Radius of a picked or selected circle/arc", "Annotate"),
         new("DIMDIAMETER", "DDI", "Diameter of a picked or selected circle/arc", "Annotate"),
         new("DIMEDIT", "DED", "Staged dimension formatting and label editor", "Annotate"),
+        new("LEADER", "LE", "Straight leader vertices; Enter finishes; U removes last vertex", "Annotate"),
+        new("LEADEREDIT", "LED", "Edit a straight leader and its arrow in one transaction", "Annotate"),
         new("MTEXT", "MT", "Multiline text at a point; \\P paragraphs; DDEDIT content and size", "Annotate"),
         new("DDEDIT", "ED", "Edit selected or picked text and block attribute values", "Annotate"),
         new("EATTEDIT", "ATE", "Edit retained attribute values on one block reference", "Blocks"),
@@ -94,7 +96,7 @@ public sealed partial class CommandEngine(CadSession session)
         input = input.Trim();
         try
         {
-            if (TrySubmitHatch(input) || TrySubmitSpline(input) || TrySubmitDimension(input) || TrySubmitMText(input) || TrySubmitAnnotation(input) || TrySubmitDrafting(input)) return;
+            if (TrySubmitLeader(input) || TrySubmitHatch(input) || TrySubmitSpline(input) || TrySubmitDimension(input) || TrySubmitMText(input) || TrySubmitAnnotation(input) || TrySubmitDrafting(input)) return;
             if (!IsActive)
             {
                 if (input.Length == 0) return;
@@ -207,7 +209,7 @@ public sealed partial class CommandEngine(CadSession session)
         if (!IsActive || !point.IsFinite) return;
         try
         {
-            if (TryHatchPoint(point) || TrySplinePoint(point) || TryDimensionPoint(point) || TryMTextPoint(point) || TryAnnotationPoint(point) || TryDraftPoint(point)) return;
+            if (TryLeaderPoint(point) || TryHatchPoint(point) || TrySplinePoint(point) || TryDimensionPoint(point) || TryMTextPoint(point) || TryAnnotationPoint(point) || TryDraftPoint(point)) return;
             if (RequiresNumber || _active is "ARRAY" or "QSELECT" || (_active is "BLOCK" or "INSERT" && _text.Length == 0)) { Message?.Invoke(Prompt); return; }
             if (_active == "TEXT" && _points.Count == 1) { Message?.Invoke("Enter the text in the command line."); return; }
             if (_active is "TRIM" or "EXTEND") { Session.TrimOrExtend(point, PickTolerance, _active == "EXTEND"); Cancel(); return; }
@@ -342,6 +344,7 @@ public sealed partial class CommandEngine(CadSession session)
     public IReadOnlyList<Entity> Preview(Vec3 cursor)
     {
         if (DimensionPreview(cursor) is { } dimension) return dimension;
+        if (LeaderPreview(cursor) is { } leader) return leader;
         if (_active == "MTEXT") return [];
         if (DraftPreview(cursor) is { } drafting) return drafting;
         if (_points.Count == 0 || RequiresNumber) return [];

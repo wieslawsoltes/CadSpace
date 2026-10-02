@@ -68,7 +68,7 @@ public static class DxfCodec
             var type = Type(record); Entity entity;
             try
             {
-                entity = type == "DIMENSION"
+                entity = type == "LEADER" ? DxfLeaderCodec.Read(record, dimensionStyles, warnings.Add) : type == "DIMENSION"
                     ? DxfDimensions.Read(DxfRecordEditing.SemanticPairs(record), record, dimensionStyles, warnings.Add)
                     : DxfEntityReader.Read(DxfRecordEditing.SemanticPairs(record), warnings.Add);
                 if (entity is OpaqueEntity opaqueSource) entity = opaqueSource with { RawRecord = Encode(record) };
@@ -152,9 +152,15 @@ public static class DxfCodec
         {
             if (source != null && originals.TryGetValue(entity.Id, out var original) && entity == original && source.Records.TryGetValue(entity.Id, out var raw)) return Encode(raw);
             if (source != null && originals.TryGetValue(entity.Id, out var prior) && source.Records.TryGetValue(entity.Id, out var retained)
-                && (DxfAttributeEditing.TryWrite(entity, prior, retained, warnings.Add, out var patched)
+                && (DxfLeaderCodec.TryPatch(entity, prior, retained, warnings.Add, out var patched)
+                    || DxfAttributeEditing.TryWrite(entity, prior, retained, warnings.Add, out patched)
                     || DxfRecordEditing.TryWrite(entity, prior, retained, warnings.Add, out patched))) return patched;
             if (entity is OpaqueEntity opaque) return opaque.RawRecord;
+            if (LeaderGeometry.Unwrap(entity) != null)
+            {
+                if (source?.Records.ContainsKey(entity.Id) == true) warnings.Add("Regenerated LEADER: unmodeled styles/application data may be lost; annotations are not regenerated.");
+                return DxfLeaderCodec.Write(entity, drawing, NewHandle, warnings.Add);
+            }
             if (DimensionGeometry.Unwrap(entity) != null) return dimensions.Write(entity);
             var buffer = new StringBuilder();
             void Pair(int code, object value) => buffer.Append(code.ToString(Culture)).Append('\n').Append(Convert.ToString(value, Culture)).Append('\n');

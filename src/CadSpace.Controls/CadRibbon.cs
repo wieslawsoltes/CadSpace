@@ -129,13 +129,14 @@ public sealed class CadRibbon : UserControl
                 var utilities = new CadRibbonPanel("Utilities"); utilities.Items.Children.Add(new CadRibbonButton("DIST", Invoke, "AREA")); Small(utilities, "QSELECT", "SELECTSIMILAR", "SELECTALL"); _groups.Children.Add(utilities); break;
             case "Modify": Group("Transform", "MOVE", "COPY", "ROTATE", "SCALE", "MIRROR", "STRETCH"); Group("Edit", "TRIM", "EXTEND", "FILLET", "CHAMFER", "BREAK", "JOIN"); Group("Curves", "PEDIT", "SPLINEDIT", "PLINEWID"); Group("Properties", "MATCHPROP"); Group("Pattern", "OFFSET", "ARRAY", "EXPLODE", "ERASE"); break;
             case "Insert": Group("Blocks", "INSERT", "BLOCK", "EATTEDIT", "EXPLODE"); Group("Pattern", "ARRAY"); Group("Content", "TOOLPALETTES", "OPEN"); break;
-            case "Annotate": Group("Text", "TEXT", "MTEXT", "DDEDIT"); Group("Dimensions", "DIMLINEAR", "DIMALIGNED", "DIMROTATED", "DIMANGULAR", "DIMANGULAR2", "DIMRADIUS", "DIMDIAMETER", "DIMORDINATE", "DIMEDIT"); Group("Hatching", "HATCH", "GRADIENT", "HATCHEDIT", "HATCHGENERATEBOUNDARY"); break;
+            case "Annotate": Group("Leaders", "LEADER", "LEADEREDIT"); Group("Text", "TEXT", "MTEXT", "DDEDIT"); Group("Dimensions", "DIMLINEAR", "DIMALIGNED", "DIMROTATED", "DIMANGULAR", "DIMANGULAR2", "DIMRADIUS", "DIMDIAMETER", "DIMORDINATE", "DIMEDIT"); Group("Hatching", "HATCH", "GRADIENT", "HATCHEDIT", "HATCHGENERATEBOUNDARY"); break;
             case "Layout": Group("Layouts", "LAYOUT_NEW", "LAYOUT_RENAME", "LAYOUT_DELETE"); Group("View", "TOP", "ZOOM"); break;
             case "3D Modeling": Group("Mesh Primitives", "BOX", "CYLINDER", "SPHERE", "CONE"); Group("Mesh Surfaces", "EXTRUDE", "REVOLVE", "SWEEP", "LOFT"); Group("Mesh Booleans", "UNION", "SUBTRACT", "INTERSECT"); Group("Transform", "ROTATE3D", "MIRROR3D", "ALIGN3D"); break;
             case "View": Group("Views", "TOP", "3DORBIT", "ZOOM"); Group("Palettes", "PROPERTIES", "TOOLPALETTES", "LAYER", "LINETYPE"); Group("Workspace", "OPTIONS", "CLEANSCREENON"); break;
             case "Manage": Group("Drawing", "LAYER", "LINETYPE", "QSELECT"); Group("Workspace", "OPTIONS", "RENDERSTATS", "UISTATS"); Group("Recovery", "RECOVER"); break;
             case "Output": Group("Native Project", "SAVE"); Group("Interchange", "EXPORT", "EXPORT_BINARY"); break;
             case "Polyline": Group("Polyline", "PEDIT", "JOIN", "PLINEWID", "STRETCH", "EXPLODE"); Group("Modify", "MOVE", "COPY", "SCALE", "ERASE"); break;
+            case "Leader": Group("Leaders", "LEADER", "LEADEREDIT"); Group("Edit", "MOVE", "COPY", "ERASE"); break;
             case "Hatch": Group("Hatch and Gradient", "HATCHEDIT", "GRADIENT", "HATCHGENERATEBOUNDARY"); Group("Modify", "MOVE", "COPY", "ERASE"); break;
             case "Spline": Group("Spline", "SPLINEDIT", "SPLINE"); Group("Edit", "MOVE", "COPY", "ROTATE", "SCALE", "ERASE"); break;
             case "Dimension": Group("Dimensions", "DIMEDIT", "DIMLINEAR", "DIMALIGNED", "DIMANGULAR", "DIMRADIUS", "DIMDIAMETER", "DIMORDINATE"); Group("Edit", "MOVE", "COPY", "ERASE"); break;

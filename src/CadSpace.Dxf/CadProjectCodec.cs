@@ -18,7 +18,7 @@ public static partial class CadProjectCodec
         using var memory = new MemoryStream();
         using (var writer = new Utf8JsonWriter(memory, new JsonWriterOptions { Indented = true }))
         {
-            writer.WriteStartObject(); writer.WriteString("format", "CadSpace"); writer.WriteNumber("version", HasGradients(drawing) || source != null && HasGradients(source.Original) ? 4 : HasNativeDimensions(drawing) || source != null && HasNativeDimensions(source.Original) ? 3 : 2);
+            writer.WriteStartObject(); writer.WriteString("format", "CadSpace"); writer.WriteNumber("version", DxfLeaderCodec.Contains(drawing) || source != null && DxfLeaderCodec.Contains(source.Original) ? 5 : HasGradients(drawing) || source != null && HasGradients(source.Original) ? 4 : HasNativeDimensions(drawing) || source != null && HasNativeDimensions(source.Original) ? 3 : 2);
             writer.WritePropertyName("drawing"); WriteDrawing(writer, drawing);
             if (source != null)
             {
@@ -41,7 +41,7 @@ public static partial class CadProjectCodec
         if (text.Length > MaximumCharacters) throw new FormatException("Native project exceeds the 128 Mi-character read limit.");
         using var document = JsonDocument.Parse(text, new JsonDocumentOptions { MaxDepth = 128 });
         var root = document.RootElement;
-        if (root.GetProperty("format").GetString() != "CadSpace" || root.GetProperty("version").GetInt32() is not (1 or 2 or 3 or 4)) throw new FormatException("Unsupported CadSpace project format/version.");
+        if (root.GetProperty("format").GetString() != "CadSpace" || root.GetProperty("version").GetInt32() is not (1 or 2 or 3 or 4 or 5)) throw new FormatException("Unsupported CadSpace project format/version.");
         var drawing = ReadDrawing(root.GetProperty("drawing"));
         DxfSource? source = null;
         if (root.TryGetProperty("dxfOriginal", out var raw))

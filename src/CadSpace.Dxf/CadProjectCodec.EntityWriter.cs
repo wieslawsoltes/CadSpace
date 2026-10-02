@@ -27,6 +27,7 @@ public static partial class CadProjectCodec
                     foreach (var v in e.Vertices) { w.WriteStartObject(); Point(w, "point", v.Position); w.WriteNumber("bulge", v.Bulge); w.WriteNumber("startWidth", v.StartWidth); w.WriteNumber("endWidth", v.EndWidth); w.WriteEndObject(); } w.WriteEndArray(); break;
                 case EllipseEntity e: Point(w, "center", e.Center); Point(w, "major", e.MajorAxis); w.WriteNumber("ratio", e.Ratio); w.WriteNumber("start", e.StartParameter); w.WriteNumber("end", e.EndParameter); break;
                 case TextEntity e: Point(w, "point", e.Position); w.WriteString("text", e.Text); w.WriteNumber("height", e.Height); w.WriteNumber("rotation", e.Rotation); break;
+                case LeaderEntity e: WriteLeader(w, e); break;
                 case DimensionEntity e: WriteDimension(w, e); break;
                 case HatchEntity e: Points(w, "boundary", e.Boundary); w.WriteNumber("spacing", e.Spacing); w.WriteNumber("angle", e.Angle); w.WriteBoolean("solid", e.Solid); break;
                 case MeshEntity e: Points(w, "vertices", e.Vertices); w.WritePropertyName("triangles"); w.WriteStartArray(); foreach (var index in e.Triangles) w.WriteNumberValue(index); w.WriteEndArray(); w.WriteString("operation", e.Operation); break;
