@@ -23,6 +23,7 @@ public static class GripEditing
             PolylineEntity p => p.Vertices.Select(v => (v.Position, "Vertex")),
             Polyline3DEntity p => p.Points.Select(v => (v, "Vertex")),
             SplineEntity s => s.ControlPoints.Select(v => (v, "Control point")),
+            LeaderEntity l => l.Vertices.Select(v => (v, "Leader vertex")),
             DimensionEntity d => DimensionGeometry.Points(d).Select((p, i) => (p, i == 2 ? "Dimension line / leader" : "Definition / text point")),
             PlacedEntity p => Grips(p.Geometry).Select(g => (p.Placement.Point(g.Position), g.Label)),
             _ => []
@@ -46,6 +47,7 @@ public static class GripEditing
             PolylineEntity p => p with { Vertices = p.Vertices.SetItem(index, p.Vertices[index] with { Position = target }) },
             Polyline3DEntity p => p with { Points = p.Points.SetItem(index, target) },
             SplineEntity s => s with { ControlPoints = s.ControlPoints.SetItem(index, target) },
+            LeaderEntity l => l with { Vertices = l.Vertices.SetItem(index, target) },
             DimensionEntity d => DimensionEditing.MovePoint(d, index, target),
             _ => EntityGeometry.Transform(entity, Transform3.Translation(delta))
         };
@@ -74,6 +76,7 @@ public static class GripEditing
             PolylineEntity p => p with { Vertices = p.Vertices.Select(v => v with { Position = Point(v.Position) }).ToImmutableArray() },
             Polyline3DEntity p => p with { Points = p.Points.Select(Point).ToImmutableArray() },
             SplineEntity s => s with { ControlPoints = s.ControlPoints.Select(Point).ToImmutableArray() },
+            LeaderEntity l => l with { Vertices = l.Vertices.Select(Point).ToImmutableArray() },
             DimensionEntity d => DimensionEditing.Stretch(d, inside, delta),
             PointEntity p => p with { Position = Point(p.Position) },
             TextEntity t => t with { Position = Point(t.Position) },

@@ -24,6 +24,7 @@ internal static class CadShellArtwork
             case "DIMANGULAR": case "DIMANGULAR2":
                 L(4, 28, 28, 28); L(4, 28, 4, 4); using (var path = new SKPath()) { path.AddArc(new SKRect(-16, 8, 24, 48), 270, 90); canvas.DrawPath(path, p); } break;
             case "DIMEDIT": R(3, 4, 22, 24); L(7, 10, 21, 10); L(7, 16, 17, 16); L(15, 29, 30, 14); break;
+            case "LEADER": case "LEADEREDIT": L(3,27,16,8); L(16,8,29,8); L(3,27,4,20); L(3,27,10,24); break;
             case "MTEXT": L(4, 4, 18, 4); L(11, 4, 11, 26); L(20, 9, 29, 9); L(20, 16, 29, 16); L(20, 23, 29, 23); break;
             case "DDEDIT": case "EATTEDIT": R(3, 4, 19, 21); L(7, 9, 18, 9); L(7, 14, 16, 14); L(15, 28, 29, 14); L(15, 28, 19, 27); break;
             case "POLYGON":

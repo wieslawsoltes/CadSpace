@@ -1,5 +1,19 @@
 # Changelog
 
+## Native leader integration (unreleased)
+
+- Added native straight LEADER definitions, arrows, source-preserving vertex/topology/visibility edits, collision-free shared canonical styles and scoped annotation-reference checks.
+- Added LEADER/LE and LEADEREDIT/LED, staged indexed editing, preview/Undo, grips/snaps, Properties, contextual/Annotate ribbons, classic menus and double-click.
+- Added leader-bearing native project v5, validated legacy source-graph compatibility and bounded 16-bit vertex counts.
+- Added a focused headless suite, six independent ASCII/binary export audits and a real browser save/reopen/edit/download workflow. Qualification status belongs to the corresponding CI run; see docs/LEADERS.md for contracts.
+
+## Gradient hatches and retained attributes (unreleased)
+
+- Added nine-name native gradient HATCH metadata, version-4 persistence, analytic selected-boundary HATCH/GRADIENT creation, staged HATCHEDIT and boundary extraction.
+- Integrated reusable controls and retained Skia/GPU gradient rendering; nonlinear/shifted profiles remain approximate.
+- Validated INSERT/ATTRIB/SEQEND compounds can export natively without whole-file provenance, including invisible-only attributes, while checking root/child handle safety.
+- Added 37 headless tests and four independent export audits. See docs/HATCHES.md.
+
 ## Rational spline editing (unreleased)
 
 - Added SPLINEDIT/SPE, reusable indexed control-point/weight editing and curve-preserving interior knot insertion.

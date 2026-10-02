@@ -13,7 +13,7 @@ Enter one command or prompted value at a time. Coordinates use invariant decimal
 | POINT | PO | One coordinate. |
 | TEXT | T | Insertion point; text. Initial text height is 12 units; edit it in Properties. |
 | DIMALIGNED | DAL | Two extension points; dimension-line location. |
-| HATCH | H | Select closed polylines first. Adds a basic 45-degree hatch with 10-unit spacing. |
+| HATCH | H | Preselect coplanar closed centerline polylines/circles. Creates one native hatch with retained bulges and island loops; default pattern is 45 degrees with 10-unit spacing. |
 | MOVE | M | Selected objects; base point; destination point. |
 | COPY | CO | Selected objects; base point; destination point. |
 | ROTATE | RO | Selected objects; base point; numeric angle in degrees. |
@@ -67,7 +67,7 @@ See [line-editing details and boundaries](LINE-EDITING.md). Modification errors 
 | PERSPECTIVE | PERSPECTIVE | 1 perspective, 0 orthographic. |
 | CLIP3D | CLIP3D | x,y,z,nx,ny,nz or OFF; retains normal·(point-origin) <= 0, uncapped display only. |
 
-The complete registry has **92 commands**. EXPLODE handles analytic bulged-polyline segments as arcs. SelectAll is limited to visible entities of the active layout. Mesh tools do not imply ACIS/B-rep or every AutoCAD option.
+The complete registry has **97 commands**. EXPLODE handles analytic bulged-polyline segments as arcs. SelectAll is limited to visible entities of the active layout. Mesh tools do not imply ACIS/B-rep or every AutoCAD option.
 
 Tab accepts completion in an idle command box; F2 expands history, F12 toggles dynamic input, and Ctrl+1 toggles Properties. Snap options expose per-mode choices including line intersections/perpendiculars and circle/arc tangents. Browser shortcuts may take precedence.
 
@@ -138,3 +138,9 @@ Hold Ctrl to keep a dragged palette floating near an edge. Escape cancels palett
 DIMLINEAR/DIMROTATED, DIMANGULAR/DIMANGULAR2, DIMRADIUS/DIMDIAMETER, DIMORDINATE and DIMEDIT supplement DIMALIGNED. The shared editor, native subtype export and exact input/formatting boundaries are documented in [Native dimensions](DIMENSIONS.md).
 
 `SPLINEDIT` (`SPE`) opens the indexed control-point/weight and knot editor for one selected or picked spline. Each Apply/Insert is one Undo step; Close does not revert earlier edits. Periodic seams are read only. See [spline editing](SPLINES.md).
+
+## Hatch and leader workflows
+
+`GRADIENT` (`GD`) creates a native gradient hatch from selected closed coplanar boundaries. `HATCHEDIT` (`HE`) opens staged fill/pattern/gradient properties. `HATCHGENERATEBOUNDARY` (`HGB`) extracts selected hatch loops as closed polylines. See [hatch authoring](HATCHES.md) for limits.
+
+`LEADER` (`LE`) accepts WCS path vertices; Enter finishes, U removes the last staged vertex and Escape cancels. It creates a straight path and arrow, not attached annotation text. `LEADEREDIT` (`LED`) edits one selected/picked straight leader using the same staged control as Properties, the contextual ribbon and 2D double-click. See [native leaders](LEADERS.md) for transport, placement and reference-handling boundaries.

@@ -24,6 +24,7 @@ public sealed class CadPalette : UserControl
     public event Action? DimensionEditRequested;
     public event Action? SplineEditRequested;
     public event Action? HatchEditRequested;
+    public event Action? LeaderEditRequested;
     public CadPalette()
     {
         var root = CadTheme.Grid(33, -1); root.Background = CadTheme.Brush(CadTheme.Background);
@@ -90,6 +91,11 @@ public sealed class CadPalette : UserControl
         _body.Children.Add(CadTheme.Text("Linetype", 11, CadTheme.Muted)); _body.Children.Add(lineTypes);
         if (selected.Length != 1) return;
         var entity = selected[0];
+        if (LeaderGeometry.Unwrap(entity) is { } leader)
+        {
+            Field("Leader vertices", leader.Vertices.Length.ToString());
+            if (editable) _body.Children.Add(CadUi.TextButton("Leader Properties…", () => LeaderEditRequested?.Invoke(), "properties.leader"));
+        }
         if (HatchEditing.Unwrap(entity) is { } hatch)
         {
             Field("Fill", hatch.Gradient?.Name ?? (hatch.Solid ? "Solid" : hatch.PatternName));

@@ -39,7 +39,7 @@ public static partial class CadProjectCodec
                     LinetypeScale = actual.LinetypeScale, Visible = actual.Visible, Layout = actual.Layout };
                 return VerifySourceEntity(child, saved);
             }
-            if (!originalRecord.IsDefaultOrEmpty && originalRecord[0].Value.Trim() == "DIMENSION")
+            if (!originalRecord.IsDefaultOrEmpty && originalRecord[0].Value.Trim() is "DIMENSION" or "LEADER")
             {
                 // Older projects used anonymous display wrappers or basic aligned definitions. Validate
                 // the entire earlier interpretation, including raw data, instead of trusting a saved picture.
@@ -79,6 +79,7 @@ public static partial class CadProjectCodec
     }
     private static bool Equivalent(Entity a, Entity b) => (a, b) switch
     {
+        (LeaderEntity x, LeaderEntity y) => x.Vertices.SequenceEqual(y.Vertices) && x with { Vertices = y.Vertices } == y,
         (PolylineEntity x, PolylineEntity y) => x.Vertices.SequenceEqual(y.Vertices) && x with { Vertices = y.Vertices } == y,
         (HatchEntity x, HatchEntity y) => x.Boundary.SequenceEqual(y.Boundary) && x with { Boundary = y.Boundary } == y,
         (MeshEntity x, MeshEntity y) => x.Vertices.SequenceEqual(y.Vertices) && x.Triangles.SequenceEqual(y.Triangles) && x with { Vertices = y.Vertices, Triangles = y.Triangles } == y,

@@ -22,6 +22,7 @@ public static partial class CadProjectCodec
                 "LWPOLYLINE" => new PolylineEntity(e.GetProperty("vertices").EnumerateArray().Select(v => new PolyVertex(P(v, "point"), N(v, "bulge")) { StartWidth = v.TryGetProperty("startWidth", out var sw) ? sw.GetDouble() : 0, EndWidth = v.TryGetProperty("endWidth", out var ew) ? ew.GetDouble() : 0 }).ToImmutableArray(), e.GetProperty("closed").GetBoolean()) { ConstantWidth = e.TryGetProperty("constantWidth", out var cw) ? cw.GetDouble() : 0, ContinuousLinetype = e.TryGetProperty("continuousLinetype", out var generated) && generated.GetBoolean() },
                 "ELLIPSE" => new EllipseEntity(P(e, "center"), P(e, "major"), N(e, "ratio"), N(e, "start"), N(e, "end")),
                 "TEXT" or "MTEXT" => new TextEntity(P(e, "point"), S(e, "text"), N(e, "height"), N(e, "rotation"), type == "MTEXT"),
+                "LEADER" => ReadLeader(e),
                 "DIMENSION" => ReadDimension(e),
                 "HATCH" => new HatchEntity(Points(e.GetProperty("boundary")), N(e, "spacing"), N(e, "angle"), e.GetProperty("solid").GetBoolean()),
                 "MESH" => new MeshEntity(Points(e.GetProperty("vertices")), e.GetProperty("triangles").EnumerateArray().Select(i => i.GetInt32()).ToImmutableArray(), S(e, "operation")),

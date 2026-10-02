@@ -30,6 +30,7 @@ public static class EntityGeometry
         LineEntity l => [l.Start, l.End], PointEntity p => [p.Position], CircleEntity c => [c.Center],
         ArcEntity a => [a.Center], EllipseEntity l => [l.Center, l.MajorAxis],
         PolylineEntity p => p.Vertices.Select(v => v.Position), TextEntity t => [t.Position],
+        LeaderEntity l => l.Vertices,
         DimensionEntity d => DimensionGeometry.Points(d), HatchEntity h => h.Boundary,
         MeshEntity m => m.Vertices, BlockReferenceEntity b => [b.Position], _ => AdvancedGeometry.Anchors(e)
     };
@@ -150,6 +151,8 @@ public static class EntityGeometry
                     var sweep = ellipse.EndParameter - ellipse.StartParameter; if (sweep <= 0) sweep += 2 * Math.PI;
                     Path(Enumerable.Range(0, 257).Select(i => ellipse.Center + ellipse.MajorAxis * Math.Cos(ellipse.StartParameter + sweep * i / 256) + minor * Math.Sin(ellipse.StartParameter + sweep * i / 256)), Math.Abs(sweep - Math.PI * 2) < 1e-8); break;
                 case TextEntity text: Text(text.Position, text.Text.Replace("\\P", "\n"), text.Height, text.Rotation); break;
+                case LeaderEntity leader:
+                    foreach (var child in LeaderGeometry.For(leader)) Child(child, transform); break;
                 case DimensionEntity dim:
                     if (DimensionGeometry.UsesPicture(dim) && drawing.Blocks.ContainsKey(dim.Picture!.BlockName))
                         Child(new BlockReferenceEntity(dim.Picture.BlockName, dim.Picture.Insertion, new(1,1,1)), transform);

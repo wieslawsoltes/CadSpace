@@ -42,6 +42,7 @@ public sealed class CadDocument
         if (entity is ArcEntity a && (!double.IsFinite(a.Radius) || a.Radius <= 0 || !double.IsFinite(a.StartAngle) || !double.IsFinite(a.EndAngle))) throw new ArgumentException("Invalid arc.");
         if (entity is EllipseEntity ell && (ell.MajorAxis.Length <= 1e-9 || !double.IsFinite(ell.Ratio) || ell.Ratio <= 0 || !double.IsFinite(ell.StartParameter) || !double.IsFinite(ell.EndParameter))) throw new ArgumentException("Invalid ellipse.");
         if (entity is TextEntity t && (!double.IsFinite(t.Height) || t.Height <= 0 || !double.IsFinite(t.Rotation))) throw new ArgumentException("Invalid text geometry.");
+        if (entity is LeaderEntity leader) LeaderGeometry.Validate(leader);
         if (entity is DimensionEntity dim) DimensionGeometry.Validate(dim);
         if (entity is PolylineEntity wide) PolylineWidths.Validate(wide);
         if (entity is PolylineEntity p && (p.Vertices.Length < 2 || p.Vertices.Any(v => !double.IsFinite(v.Bulge)))) throw new ArgumentException("Invalid polyline.");

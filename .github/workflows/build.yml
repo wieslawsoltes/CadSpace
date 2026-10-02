@@ -30,6 +30,7 @@ jobs:
           python tests/fixtures/dimensions.py
           python tests/fixtures/splines.py
           python tests/fixtures/hatches.py
+          python tests/fixtures/leaders.py
       - name: Geometry and document regression tests
         run: dotnet run --project tests/CadSpace.Tests -c Release
       - name: DXF and editing regression tests
@@ -69,6 +70,12 @@ jobs:
         run: |
           dotnet run --project tests/CadSpace.Hatch.Tests -c Release
           python tests/fixtures/hatches.py artifacts/hatch-audit
+      - name: Native leader regressions and independent audit
+        env:
+          CADSPACE_LEADER_OUTPUT: artifacts/leader-audit
+        run: |
+          dotnet run --project tests/CadSpace.Leader.Tests -c Release
+          python tests/fixtures/leaders.py artifacts/leader-audit
       - name: Pack reusable libraries
         run: |
           for project in Geometry Model Dxf Engine Rendering; do
@@ -144,7 +151,7 @@ jobs:
           printf '{"commit":"%s","unoSdk":"6.7.30","configuration":"Release"}\n' "$GITHUB_SHA" > artifacts/site/build-info.json
       - name: Browser smoke test dependencies
         run: |
-          python -m pip install playwright==1.55.0 Pillow==11.3.0
+          python -m pip install playwright==1.55.0 Pillow==11.3.0 ezdxf==1.4.4
           python -m playwright install --with-deps chromium
       - name: Test the published application
         run: |
@@ -152,7 +159,7 @@ jobs:
           ln -s "$PWD/artifacts/site" artifacts/server/CadSpace
           python -m http.server 8177 --bind 127.0.0.1 --directory artifacts/server > artifacts/server.log 2>&1 &
           result=0
-          for test in recovery_storage smoke styles widths workspace workspace_polish typography editing annotations mtext dimensions splines hatches; do
+          for test in recovery_storage smoke styles widths workspace workspace_polish typography editing annotations mtext dimensions splines hatches leaders; do
             python "tests/browser/$test.py" || result=1
           done
           exit "$result"

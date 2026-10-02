@@ -8,6 +8,7 @@ public sealed partial class CadWorkspace
     private bool _styleDialog;
     private async void OnStyleRequested(string command)
     {
+        if (command == "LEADEREDITOR") { ShowLeaderEditor(); return; }
         if (command == "HATCHEDITOR") { ShowHatchEditor(); return; }
         if (command == "SPLINEEDITOR") { ShowSplineEditor(); return; }
         if (command == "DIMENSIONEDITOR") { ShowDimensionEditor(); return; }

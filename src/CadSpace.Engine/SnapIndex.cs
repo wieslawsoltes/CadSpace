@@ -37,6 +37,9 @@ public sealed class SnapIndex
                     var t = Transform3.Translation(-block.BasePoint).Then(Transform3.Scaling(b.Scale)).Then(Transform3.RotationZ(b.Rotation)).Then(Transform3.Translation(b.Position)).Then(transform);
                     foreach(var child in block.Entities) Add(child,root,t,layer,depth+1); break;
                 case LineEntity l: Line(l.Start,l.End); break;
+                case LeaderEntity leader:
+                    for (var i = 0; i + 1 < leader.Vertices.Length; i++) Line(leader.Vertices[i], leader.Vertices[i+1]);
+                    break;
                 case PointEntity p: Point(p.Position,SnapKind.Endpoint,ObjectSnapModes.Endpoint); break;
                 case CircleEntity c:
                     circles.Add(new(c.Center,c.Radius,0,360,transform,root));
