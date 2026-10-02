@@ -15,8 +15,8 @@ public sealed record LeaderEntity(ImmutableArray<Vec3> Vertices) : Entity
     public bool Hookline { get; init; }
     public bool HooklineReversed { get; init; }
     public bool TextAbove { get; init; } = true;
-    public double TextHeight { get; init; }
-    public double TextWidth { get; init; }
+    public double TextHeight { get; init; } = 1;
+    public double TextWidth { get; init; } = 1;
     public double Gap { get; init; } = .625;
     public int AnnotationType { get; init; } = 3;
     public string AnnotationHandle { get; init; } = "0";

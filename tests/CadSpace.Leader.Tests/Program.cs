@@ -29,6 +29,11 @@ Test("leader paths, filled arrows and root picking identity", () => {
     Check(s.HitTest(new(2,.1),.5)==l.Id); Check(s.HitTest(new(4,.5),.2)==l.Id);
     Check(LeaderGeometry.For(l)==LeaderGeometry.For(l));
 });
+Test("canonical annotation defaults remain positive without silent normalization", () => {
+    var l=Leader();Near(l.TextHeight,1);Near(l.TextWidth,1);
+    foreach(var invalid in new[]{l with{TextHeight=0},l with{TextWidth=0}})
+        Reject(()=>DxfCodec.Write(Drawing.Empty with{Entities=[invalid]}));
+});
 Test("disabled and zero-size arrows retain line geometry", () => {
     foreach(var l in new[]{Leader() with{ArrowEnabled=false},Leader() with{ArrowSize=0}})
     { var scene=Session(l).Scene; Check(scene.Triangles.IsEmpty && scene.Paths.Length==1); }

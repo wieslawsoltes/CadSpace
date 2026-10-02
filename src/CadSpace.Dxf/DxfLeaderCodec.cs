@@ -101,6 +101,8 @@ internal static class DxfLeaderCodec
         var leader = (LeaderEntity)e;
         if (transform != Transform3.Identity) leader = LeaderGeometry.Transform(leader,transform);
         LeaderGeometry.Validate(leader);
+        if (leader.TextHeight <= 0 || leader.TextWidth <= 0)
+            throw new NotSupportedException("Canonical LEADER output requires positive stored annotation dimensions; retain the source record or save a native project.");
         var b = new StringBuilder();
         void Pair(int code, object value) => b.Append(code.ToString(Culture)).Append('\n').Append(Convert.ToString(value,Culture)).Append('\n');
         void Point(int code, Vec3 p) { Pair(code,p.X); Pair(code+10,p.Y); Pair(code+20,p.Z); }

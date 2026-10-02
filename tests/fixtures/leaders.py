@@ -44,6 +44,8 @@ def audit(folder):
             elif name=='leaders-created':
                 assert len(leaders)==2
                 assert all(l.dxf.dimstyle.startswith('CadSpaceLeader') for l in leaders)
+                assert all(l.dxf.text_height==1 and l.dxf.text_width==1 for l in leaders[:1])
+                assert leaders[1].dxf.text_height==2 and leaders[1].dxf.text_width==2
                 assert leaders[0].override().get('dimasz')==5
                 assert [tuple(p) for p in leaders[1].vertices]==[(10,20,30),(30,20,30),(30,20,50)]
                 assert leaders[1].override().get('dimasz')==10

@@ -65,7 +65,8 @@ async def main():
             # Save through the normal host; verify the new native format, then reopen the downloaded file.
             async with page.expect_download(timeout=30000) as pending:await click(page,events,'quick.SAVE')
             native=output/'leader-ui.cadspace';await (await pending.value).save_as(native)
-            project=json.loads(native.read_text());assert project['version']==5
+            project=json.loads(native.read_text(encoding='utf-8-sig'));assert project['version']==5
+            await page.wait_for_function("!document.title.includes('*')",timeout=10000)
             async with page.expect_file_chooser(timeout=20000) as chooser:await click(page,events,'quick.OPEN')
             await (await chooser.value).set_files(str(native.resolve()))
             await page.wait_for_function("document.title.includes('leader-ui.cadspace')",timeout=30000)
